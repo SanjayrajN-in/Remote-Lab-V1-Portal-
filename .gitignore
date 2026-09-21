@@ -13,3 +13,6 @@ static/sop/*
 *.log
 *.pem
 cookies*.txt
+*.secbak
+*.vaptbak
+*.save
