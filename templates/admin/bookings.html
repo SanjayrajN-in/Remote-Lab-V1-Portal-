@@ -1,0 +1,70 @@
+{% extends "_admin_shell.html" %}
+{% set active = 'bookings' %}
+{% block title %}Bookings - IKEN Remote Lab admin{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div><div class="eyebrow">Scheduling</div><h1>Bookings</h1>
+    <p class="tiny muted" style="margin:0">All times {{ tz_label }}.</p></div>
+  <span class="tiny muted">{{ bookings | length }} shown</span>
+</div>
+
+<div class="card" style="margin-bottom:1.15rem">
+  <form method="get" class="row" style="align-items:flex-end;gap:.8rem">
+    <div class="field" style="margin:0;min-width:150px"><label for="status">Status</label>
+      <select id="status" name="status">
+        <option value="">All statuses</option>
+        {% for s in ['upcoming', 'active', 'completed', 'cancelled'] %}
+          <option value="{{ s }}" {{ 'selected' if f.status == s }}>{{ s | capitalize }}</option>
+        {% endfor %}
+      </select></div>
+    <div class="field" style="margin:0;min-width:180px"><label for="user_id">Student</label>
+      <select id="user_id" name="user_id">
+        <option value="">All students</option>
+        {% for u in users %}<option value="{{ u.id }}" {{ 'selected' if f.user_id == u.id | string }}>{{ u.full_name }}</option>{% endfor %}
+      </select></div>
+    <div class="field" style="margin:0;min-width:190px"><label for="experiment_id">Experiment</label>
+      <select id="experiment_id" name="experiment_id">
+        <option value="">All experiments</option>
+        {% for e in experiments %}<option value="{{ e.id }}" {{ 'selected' if f.experiment_id == e.id | string }}>{{ e.name }}</option>{% endfor %}
+      </select></div>
+    <div class="field" style="margin:0"><label for="date">Date</label>
+      <input type="date" id="date" name="date" value="{{ f.date }}"></div>
+    <button class="btn">Filter</button>
+    <a href="{{ url_for('admin.bookings') }}" class="btn btn-ghost">Clear</a>
+  </form>
+</div>
+
+<div class="card card-flush">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Booking</th><th>Student</th><th>Experiment</th><th>Date</th><th>Time</th><th>Node</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for b in bookings %}
+        <tr>
+          <td class="mono">{{ b.code }}</td>
+          <td>{{ b.user.full_name }}<br><span class="tiny muted">{{ b.user.email }}</span></td>
+          <td>{{ b.experiment.name }}</td>
+          <td class="nowrap">{{ b.start_time | dt('%Y-%m-%d') }}</td>
+          <td class="nowrap">{{ b.start_time | dt('%H:%M') }} – {{ b.end_time | dt('%H:%M') }}</td>
+          <td class="tiny">{{ b.node.name if b.node else '—' }}</td>
+          <td><span class="badge b-{{ b.live_status }}">{{ b.live_status }}</span></td>
+          <td class="right nowrap">
+            <a href="{{ url_for('admin.booking_detail', code=b.code) }}" class="btn btn-ghost btn-sm">View</a>
+            <form method="post" action="{{ url_for('admin.delete_booking', code=b.code) }}" style="display:inline"
+                  onsubmit="return confirm('Delete booking {{ b.code }}?')">
+              <button class="btn btn-coral btn-sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="empty">
+          <div class="empty-ico">▤</div><h3>No bookings match</h3>
+          <p>Try widening the filters.</p>
+        </td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

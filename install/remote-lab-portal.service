@@ -1,0 +1,35 @@
+[Unit]
+Description=Remote Lab portal (master server)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__APP_DIR__
+EnvironmentFile=__APP_DIR__/.env
+# Single worker, many threads: the lab page's SocketIO relay
+# (services/pi_relay.py, services/audio_relay.py) keeps per-session state in
+# process memory, so a second worker process would not see it. Matches
+# remote_lab_admin's deployed config, which runs the same relay this way.
+ExecStart=__APP_DIR__/venv/bin/gunicorn \
+    --worker-class gthread \
+    --workers 1 \
+    --threads 12 \
+    --timeout 120 \
+    --bind 0.0.0.0:__PORT__ \
+    --access-logfile - \
+    --error-logfile - \
+    wsgi:application
+Restart=always
+RestartSec=5
+
+# The app only ever writes inside its own directory.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=__APP_DIR__
+
+[Install]
+WantedBy=multi-user.target

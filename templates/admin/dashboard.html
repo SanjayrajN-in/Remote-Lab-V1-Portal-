@@ -1,0 +1,97 @@
+{% extends "_admin_shell.html" %}
+{% set active = 'dashboard' %}
+{% block title %}Dashboard - IKEN Remote Lab admin{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Administration</div>
+    <h1>Dashboard</h1>
+  </div>
+  <div class="row">
+    <span class="tiny muted">{{ current_user.full_name }}</span>
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-coral btn-sm">Sign out</a>
+  </div>
+</div>
+
+<div class="grid grid-4">
+  <div class="card"><div class="stat">
+    <div class="stat-ico t-indigo">◉</div>
+    <div><div class="stat-value">{{ stats.users }}</div><div class="stat-label">Students</div></div>
+  </div></div>
+  <div class="card"><div class="stat">
+    <div class="stat-ico t-teal">◈</div>
+    <div><div class="stat-value">{{ stats.experiments }}</div><div class="stat-label">Active experiments</div></div>
+  </div></div>
+  <div class="card"><div class="stat">
+    <div class="stat-ico t-amber">▤</div>
+    <div><div class="stat-value">{{ stats.bookings }}</div><div class="stat-label">Total bookings</div></div>
+  </div></div>
+  <div class="card"><div class="stat">
+    <div class="ring" style="--pct: {{ (stats.nodes_online / stats.nodes_total * 100) | round if stats.nodes_total else 0 }}; --ring-color: {{ 'var(--teal)' if stats.nodes_online else 'var(--coral)' }}">
+      <span>{{ stats.nodes_online }}/{{ stats.nodes_total }}</span>
+    </div>
+    <div><div class="stat-label" style="margin:0">Lab nodes online</div>
+      <a href="{{ url_for('admin.devices') }}" class="tiny">Manage nodes</a></div>
+  </div></div>
+</div>
+
+<div class="card card-flush" style="margin-top:1.15rem">
+  <div class="card-head">
+    <h3>Active sessions</h3>
+    <a href="{{ url_for('admin.sessions') }}" class="btn btn-ghost btn-sm">All sessions</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Session key</th><th>Student</th><th>Experiment</th><th>Node</th><th>Ends</th><th>Time left</th><th></th></tr></thead>
+      <tbody>
+      {% for s in active_sessions %}
+        <tr>
+          <td class="mono">{{ s.session_key }}</td>
+          <td>{{ s.user.full_name }}</td>
+          <td>{{ s.experiment.name }}</td>
+          <td>{{ s.node.name if s.node else '-' }}</td>
+          <td class="nowrap">{{ s.expires_at | dt('%H:%M') }}</td>
+          <td><span class="badge b-active">{{ s.seconds_left | duration }}</span></td>
+          <td class="right">
+            <form method="post" action="{{ url_for('admin.end_session', session_id=s.id) }}"
+                  onsubmit="return confirm('End this session now? The student loses bench access immediately.')">
+              <button class="btn btn-coral btn-sm">End</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="empty">No sessions running right now.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card card-flush" style="margin-top:1.15rem">
+  <div class="card-head">
+    <h3>Recent bookings</h3>
+    <a href="{{ url_for('admin.bookings') }}" class="btn btn-ghost btn-sm">View all</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Booking</th><th>Student</th><th>Experiment</th><th>Date</th><th>Time</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for b in recent_bookings %}
+        <tr>
+          <td class="mono">{{ b.code }}</td>
+          <td>{{ b.user.full_name }}</td>
+          <td>{{ b.experiment.name }}</td>
+          <td class="nowrap">{{ b.start_time | dt('%Y-%m-%d') }}</td>
+          <td class="nowrap">{{ b.start_time | dt('%H:%M') }} – {{ b.end_time | dt('%H:%M') }}</td>
+          <td><span class="badge b-{{ b.live_status }}">{{ b.live_status }}</span></td>
+          <td class="right"><a href="{{ url_for('admin.booking_detail', code=b.code) }}" class="btn btn-ghost btn-sm">View</a></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="empty">No bookings yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

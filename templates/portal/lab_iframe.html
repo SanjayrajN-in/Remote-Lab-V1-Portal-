@@ -1,0 +1,65 @@
+{% extends "_shell.html" %}
+{% set active = 'bookings' %}
+{% block title %}{{ experiment.name }} — IKEN Remote Lab{% endblock %}
+
+{% block content %}
+<div class="lab-bar">
+  <div class="lab-bar-info">
+    <strong>{{ experiment.name }}</strong>
+    <span class="tiny muted">Bench {{ node.name if node }} · {{ node.ip_address if node }}</span>
+  </div>
+  <div class="lab-bar-right">
+    <span class="lab-clock">ends in <strong id="labCountdown">--:--</strong></span>
+    <a href="{{ url_for('portal.bookings') }}" class="btn btn-ghost btn-sm">End &amp; leave</a>
+  </div>
+</div>
+
+<iframe id="labFrame" class="lab-frame" src="{{ pi_experiment_url }}"
+        allow="camera; microphone; autoplay" title="Live experiment"></iframe>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  html, body { height: 100%; overflow: hidden; }
+  body { display: flex; flex-direction: column; }
+  .topbar { flex: 0 0 auto; }
+  .main {
+    max-width: none !important; margin: 0 !important; padding: 0 !important;
+    flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0;
+  }
+  .lab-bar {
+    flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; padding: .55rem 1.1rem;
+    background: var(--navy, #011a38); color: #fff;
+  }
+  .lab-bar-info { display: flex; flex-direction: column; line-height: 1.2; }
+  .lab-bar-info strong { font-size: .98rem; }
+  .lab-bar-info .muted { color: #9fb2c8 !important; }
+  .lab-bar-right { display: flex; align-items: center; gap: .9rem; }
+  .lab-clock { font-size: .9rem; color: #cfe0f0; }
+  .lab-clock strong { color: var(--orange, #f48221); }
+  .lab-bar .btn-ghost { color:#fff; border-color:rgba(255,255,255,.4); }
+  .lab-frame {
+    width: 100%; border: 0; display: block; background: #0b1020;
+    flex: 1 1 auto; min-height: 0;
+  }
+</style>
+<script>
+(function () {
+  var left = {{ seconds_left | int }};
+  var out = document.getElementById('labCountdown');
+  function tick() {
+    if (left <= 0) {
+      out.textContent = '00:00';
+      window.location.href = "{{ url_for('portal.bookings') }}";
+      return;
+    }
+    var m = Math.floor(left / 60), s = left % 60;
+    out.textContent = (m<10?'0':'')+m + ':' + (s<10?'0':'')+s;
+    left -= 1;
+  }
+  tick(); setInterval(tick, 1000);
+})();
+</script>
+{% endblock %}

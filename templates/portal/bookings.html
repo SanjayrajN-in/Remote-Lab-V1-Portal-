@@ -1,0 +1,108 @@
+{% extends "_shell.html" %}
+{% set active = 'bookings' %}
+{% block title %}My bookings - IKEN Remote Lab{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div>
+    <div class="eyebrow">{{ current_user.full_name }}</div>
+    <h1>My bookings</h1>
+    <p class="tiny muted" style="margin:0">All times {{ tz_label }}.</p>
+  </div>
+  <a href="{{ url_for('portal.dashboard') }}" class="btn btn-ghost">Book another slot</a>
+</div>
+
+<div class="grid grid-4" style="margin-bottom:1.4rem">
+  <div class="card"><div class="stat">
+    <div class="stat-ico t-amber">◷</div>
+    <div><div class="stat-value">{{ upcoming | length }}</div><div class="stat-label">Upcoming &amp; active</div></div>
+  </div></div>
+  <div class="card"><div class="stat">
+    <div class="stat-ico t-teal">✓</div>
+    <div><div class="stat-value">{{ completed | length }}</div><div class="stat-label">Completed</div></div>
+  </div></div>
+  <div class="card"><div class="stat">
+    <div class="stat-ico t-coral">✕</div>
+    <div><div class="stat-value">{{ cancelled | length }}</div><div class="stat-label">Cancelled</div></div>
+  </div></div>
+</div>
+
+<div class="tabs" role="tablist">
+  <button class="tab active" data-panel="p-upcoming" role="tab">Upcoming &amp; active</button>
+  <button class="tab" data-panel="p-completed" role="tab">History</button>
+  <button class="tab" data-panel="p-cancelled" role="tab">Cancelled</button>
+</div>
+
+{% macro booking_row(b, show_actions=True) %}
+<div class="booking-row">
+  <div class="booking-ico">⚙</div>
+  <div class="booking-main">
+    <h4>{{ b.experiment.name }}</h4>
+    <div class="booking-when">
+      {{ b.start_time | dt('%d %b %Y, %H:%M') }} – {{ b.end_time | dt('%H:%M') }}
+      · {{ b.duration_min }} min
+      {% if b.node %}· {{ b.node.name }}{% endif %}
+    </div>
+  </div>
+  <div class="booking-side">
+    <span class="badge b-{{ b.live_status }}">{{ b.live_status }}</span>
+    <span class="tiny muted mono">{{ b.code }}</span>
+    {% if show_actions %}
+    <div class="row">
+      {% if b.can_start %}
+        <a href="{{ url_for('portal.start_session', code=b.code) }}" class="btn btn-teal btn-sm">
+          {{ 'Go to lab' if b.live_status == 'active' else 'Start' }}
+        </a>
+      {% else %}
+        <span class="btn btn-sm is-disabled" title="Opens 5 minutes before your slot">Start</span>
+      {% endif %}
+      <form method="post" action="{{ url_for('portal.cancel_booking', code=b.code) }}"
+            onsubmit="return confirm('Cancel booking {{ b.code }}? The slot goes back into the pool.')">
+        <button class="btn btn-ghost btn-sm">Cancel</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endmacro %}
+
+<div class="card card-flush" id="p-upcoming">
+  <div class="card-head"><h3>Upcoming &amp; active</h3></div>
+  {% for b in upcoming %}{{ booking_row(b) }}{% else %}
+    <div class="empty">
+      <div class="empty-ico">◷</div>
+      <h3>Nothing booked</h3>
+      <p>Pick an experiment and reserve a bench.</p>
+      <a href="{{ url_for('portal.dashboard') }}" class="btn">Browse experiments</a>
+    </div>
+  {% endfor %}
+</div>
+
+<div class="card card-flush" id="p-completed" style="display:none">
+  <div class="card-head"><h3>Completed sessions</h3></div>
+  {% for b in completed %}{{ booking_row(b, false) }}{% else %}
+    <div class="empty"><div class="empty-ico">✓</div><p>No completed sessions yet.</p></div>
+  {% endfor %}
+</div>
+
+<div class="card card-flush" id="p-cancelled" style="display:none">
+  <div class="card-head"><h3>Cancelled</h3></div>
+  {% for b in cancelled %}{{ booking_row(b, false) }}{% else %}
+    <div class="empty"><div class="empty-ico">✕</div><p>Nothing cancelled.</p></div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.tab').forEach(function (tab) {
+  tab.addEventListener('click', function () {
+    document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    ['p-upcoming', 'p-completed', 'p-cancelled'].forEach(function (id) {
+      document.getElementById(id).style.display = (id === tab.dataset.panel) ? '' : 'none';
+    });
+  });
+});
+</script>
+{% endblock %}

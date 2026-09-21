@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand" style="flex-direction:column;align-items:flex-start;gap:.6rem">
+      <span class="logo-chip">
+        <img src="{{ url_for('static', filename='img/iken-mark.png') }}" alt="IKEN">
+      </span>
+      <span>
+        <span class="brand-name">IKEN Remote Lab</span><br>
+        <span class="brand-sub admin-flag">Admin mode</span>
+      </span>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Overview</div>
+      <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if active == 'dashboard' }}"><span class="ico">◎</span><span>Dashboard</span></a>
+      <a href="{{ url_for('admin.logs') }}" class="{{ 'active' if active == 'logs' }}"><span class="ico">≡</span><span>Activity log</span></a>
+      <div class="nav-label">People</div>
+      <a href="{{ url_for('admin.users') }}" class="{{ 'active' if active == 'users' }}"><span class="ico">◉</span><span>Users</span></a>
+      <a href="{{ url_for('admin.courses') }}" class="{{ 'active' if active == 'courses' }}"><span class="ico">▤</span><span>Courses</span></a>
+      <div class="nav-label">Lab</div>
+      <a href="{{ url_for('admin.experiments') }}" class="{{ 'active' if active == 'experiments' }}"><span class="ico">◈</span><span>Experiments</span></a>
+      <a href="{{ url_for('admin.devices') }}" class="{{ 'active' if active == 'devices' }}"><span class="ico">▢</span><span>Lab nodes</span></a>
+      <div class="nav-label">Scheduling</div>
+      <a href="{{ url_for('admin.bookings') }}" class="{{ 'active' if active == 'bookings' }}"><span class="ico">▤</span><span>Bookings</span></a>
+      <a href="{{ url_for('admin.sessions') }}" class="{{ 'active' if active == 'sessions' }}"><span class="ico">◷</span><span>Sessions</span></a>
+      <div class="nav-foot">
+        <a href="{{ url_for('portal.home') }}"><span class="ico">⌂</span><span>Student view</span></a>
+        <a href="{{ url_for('auth.logout') }}"><span class="ico">→</span><span>Sign out</span></a>
+      </div>
+    </nav>
+  </aside>
+  <main class="main main-admin">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

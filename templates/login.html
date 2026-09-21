@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Sign in - IKEN Remote Lab{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card stack">
+    <div class="center">
+      <img src="{{ url_for('static', filename='img/iken-logo.png') }}"
+           alt="IKEN — IISc Knowledge and E-Learning Network" class="logo logo-auth">
+      <div class="wordmark" style="font-size:1.15rem">IKEN Remote Lab</div>
+    </div>
+    <div class="card">
+      <h2>Sign in</h2>
+      <p class="tiny muted">Use the address your invitation was sent to.</p>
+      <form method="post" novalidate>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" value="{{ email }}" required autofocus autocomplete="username">
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password">
+        </div>
+        <div class="row-between" style="margin-bottom:1.1rem">
+          <span class="check">
+            <input type="checkbox" id="remember" name="remember">
+            <label for="remember">Keep me signed in</label>
+          </span>
+          <a href="{{ url_for('auth.forgot_password') }}" class="tiny">Forgot password?</a>
+        </div>
+        <button type="submit" class="btn btn-block btn-lg">Sign in</button>
+      </form>
+    </div>
+    <p class="center tiny muted">
+      <a href="{{ url_for('portal.home') }}">Back to the home page</a>
+      &nbsp;·&nbsp;
+      <a href="{{ url_for('auth.admin_login') }}">Administrator sign-in</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

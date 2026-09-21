@@ -1,0 +1,182 @@
+{% extends "_shell.html" %}
+{% set active = 'dashboard' %}
+{% block title %}My experiments - IKEN Remote Lab{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Signed in as {{ current_user.full_name }}</div>
+    <h1>My experiments</h1>
+    <p class="muted" style="margin:0">
+      {% if current_user.courses %}
+        From {{ current_user.courses | map(attribute='code') | join(', ') }}.
+      {% else %}
+        You aren't enrolled on a course yet.
+      {% endif %}
+    </p>
+  </div>
+  <a href="{{ url_for('portal.bookings') }}" class="btn btn-ghost">My bookings</a>
+</div>
+
+{% if upcoming %}
+<div class="card" style="margin-bottom:1.4rem;border-left:4px solid var(--teal)">
+  <div class="card-head"><h3>Coming up</h3></div>
+  {% for b in upcoming[:3] %}
+  <div class="row-between" style="padding:.5rem 0;{% if not loop.last %}border-bottom:1px solid var(--line){% endif %}">
+    <div>
+      <strong>{{ b.experiment.name }}</strong><br>
+      <span class="tiny muted">{{ b.start_time | dt }} · {{ b.duration_min }} min · <span class="mono">{{ b.code }}</span></span>
+    </div>
+    {% if b.can_start %}
+      <a href="{{ url_for('portal.start_session', code=b.code) }}" class="btn btn-teal btn-sm">Go to lab</a>
+    {% else %}
+      <span class="badge b-upcoming">Starts {{ b.start_time | dt('%d %b, %H:%M') }}</span>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if experiments %}
+  <div class="grid grid-3">
+    {% for e in experiments %}
+    <article class="exp-card">
+      <div class="exp-top" data-experiment="{{ e.id }}" role="button" tabindex="0"
+           aria-label="View details for {{ e.name }}">
+        {% if e.course %}<span class="exp-course">{{ e.course.code }}</span>{% endif %}
+        <h3>{{ e.name }}</h3>
+        <p class="exp-summary">{{ e.summary or 'No summary yet.' }}</p>
+      </div>
+      <div class="exp-meta">
+        <span>◷ {{ e.max_duration_min }} min</span>
+        {% if e.id in ready %}
+          <span><span class="dot dot-on"></span> bench ready</span>
+        {% elif e.nodes %}
+          <span><span class="dot dot-off"></span> benches offline</span>
+        {% else %}
+          <span class="muted">no bench assigned</span>
+        {% endif %}
+      </div>
+      <div class="exp-foot">
+        <button class="btn btn-ghost btn-sm" data-experiment="{{ e.id }}">Details</button>
+        {% if e.id in held_ids %}
+          <a href="{{ url_for('portal.bookings') }}" class="btn btn-ghost btn-sm grow"
+             title="You already hold a slot for this experiment">Slot booked · view</a>
+        {% else %}
+          <a href="{{ url_for('portal.book', experiment_id=e.id) }}" class="btn btn-sm grow">Book a slot</a>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty">
+    <div class="empty-ico">◈</div>
+    <h3>No experiments yet</h3>
+    <p>Experiments appear here once you're enrolled on a course that has them.<br>
+       Ask your lab administrator to add you.</p>
+  </div>
+{% endif %}
+
+<!-- Experiment detail popup, filled from /experiment/<id>/details -->
+<div class="modal" id="expModal" role="dialog" aria-modal="true" aria-labelledby="expTitle">
+  <div class="modal-box modal-box-wide">
+    <div class="modal-head">
+      <div>
+        <div class="eyebrow" id="expCourse"></div>
+        <h2 id="expTitle" style="margin:0"></h2>
+      </div>
+      <button class="x-btn" id="expClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body" id="expBody"></div>
+    <div class="modal-foot">
+      <a href="#" class="btn btn-ghost" id="expManual" download>Download manual (PDF)</a>
+      <a href="#" class="btn" id="expBook">Book a slot</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var modal   = document.getElementById('expModal');
+  var body    = document.getElementById('expBody');
+  var title   = document.getElementById('expTitle');
+  var course  = document.getElementById('expCourse');
+  var manual  = document.getElementById('expManual');
+  var book    = document.getElementById('expBook');
+  var lastFocus = null;
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function list(items) {
+    return '<ul style="margin:.3rem 0 1rem;padding-left:1.2rem">' +
+      items.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul>';
+  }
+
+  function close() {
+    modal.classList.remove('open');
+    if (lastFocus) lastFocus.focus();
+  }
+
+  function open(id, trigger) {
+    lastFocus = trigger;
+    body.innerHTML = '<p class="muted">Loading…</p>';
+    modal.classList.add('open');
+    document.getElementById('expClose').focus();
+
+    fetch('/experiment/' + id + '/details')
+      .then(function (r) {
+        if (!r.ok) throw new Error('That experiment is not available to you.');
+        return r.json();
+      })
+      .then(function (d) {
+        title.textContent  = d.name;
+        course.textContent = d.course ? d.course_code + ' · ' + d.course : '';
+
+        var html = '';
+        if (d.description) html += '<p>' + esc(d.description) + '</p>';
+        else if (d.summary) html += '<p>' + esc(d.summary) + '</p>';
+
+        if (d.objectives.length) html += '<h3>What you will do</h3>' + list(d.objectives);
+        if (d.apparatus.length)  html += '<h3>On the bench</h3>' + list(d.apparatus);
+
+        html += '<div class="deflist" style="margin-top:1rem">' +
+          '<div><dt>Session length</dt><dd>' + d.max_duration_min + ' minutes</dd></div>' +
+          '<div><dt>Benches</dt><dd>' + d.nodes_online + ' of ' + d.nodes_total + ' online</dd></div>' +
+          '</div>';
+        body.innerHTML = html;
+
+        book.href = d.book_url;
+        if (d.has_manual) {
+          manual.href = d.manual_url;
+          manual.style.display = '';
+        } else {
+          manual.style.display = 'none';
+        }
+      })
+      .catch(function (e) {
+        body.innerHTML = '<p class="muted">' + esc(e.message) + '</p>';
+      });
+  }
+
+  document.querySelectorAll('[data-experiment]').forEach(function (el) {
+    el.addEventListener('click', function () { open(el.dataset.experiment, el); });
+    el.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); open(el.dataset.experiment, el); }
+    });
+  });
+
+  document.getElementById('expClose').addEventListener('click', close);
+  modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && modal.classList.contains('open')) close();
+  });
+})();
+</script>
+{% endblock %}

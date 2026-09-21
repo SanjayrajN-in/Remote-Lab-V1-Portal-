@@ -1,0 +1,109 @@
+{% extends "_admin_shell.html" %}
+{% set active = 'experiments' %}
+{% block title %}Experiments - IKEN Remote Lab admin{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div><div class="eyebrow">Lab</div><h1>Experiments</h1></div>
+  <button class="btn" data-open="addExp">Add experiment</button>
+</div>
+
+<div class="card card-flush">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Name</th><th>Course</th><th>Session</th><th>Manual</th><th>Benches</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for e in experiments %}
+        <tr>
+          <td><strong>{{ e.name }}</strong><br><span class="tiny muted mono">{{ e.slug }}</span></td>
+          <td>{{ e.course.code if e.course else '—' }}</td>
+          <td class="nowrap">{{ e.max_duration_min }} min</td>
+          <td>{% if e.sop_pdf %}<span class="badge b-active">PDF</span>{% else %}<span class="tiny muted">none</span>{% endif %}</td>
+          <td>
+            {% if e.nodes %}
+              <span class="dot {{ 'dot-on' if e.online_nodes else 'dot-off' }}"></span>
+              {{ e.online_nodes | length }}/{{ e.nodes | length }} online
+            {% else %}<span class="tiny muted">none assigned</span>{% endif %}
+          </td>
+          <td><span class="badge {{ 'b-active' if e.is_active else 'b-cancelled' }}">{{ 'active' if e.is_active else 'hidden' }}</span></td>
+          <td class="right nowrap">
+            <button class="btn btn-ghost btn-sm" data-open="edit{{ e.id }}">Edit</button>
+            <form method="post" action="{{ url_for('admin.delete_experiment', experiment_id=e.id) }}" style="display:inline"
+                  onsubmit="return confirm('Delete {{ e.name }}? If it has bookings it will be hidden instead.')">
+              <button class="btn btn-coral btn-sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="empty">
+          <div class="empty-ico">◈</div><h3>No experiments yet</h3>
+          <p>Add one, attach it to a course, then point a lab node at it.</p>
+        </td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% macro exp_fields(e=None) %}
+  <div class="field"><label>Name</label><input type="text" name="name" value="{{ e.name if e else '' }}" required></div>
+  <div class="field"><label>Course</label>
+    <select name="course_id">
+      <option value="">— none —</option>
+      {% for c in courses %}<option value="{{ c.id }}" {{ 'selected' if e and e.course_id == c.id }}>{{ c.code }} — {{ c.name }}</option>{% endfor %}
+    </select>
+    <div class="hint">Only students enrolled on this course will see the experiment.</div>
+    <div class="field"><label>Lab bench (node)</label>
+    <select name="node">
+      <option value="">— none —</option>
+      {% for n in nodes %}<option value="{{ n.id }}" {{ 'selected' if e and n.experiment_id == e.id }}>{{ n.name }} ({{ n.node_id }} · {{ n.ip_address }}){% if n.experiment_id and not (e and n.experiment_id == e.id) %} — on {{ n.experiment.name }}{% endif %}</option>{% endfor %}
+    </select>
+    <div class="hint">The bench a student is sent to. Choosing one that already serves another experiment moves it here.</div>
+  </div>
+  </div>
+  <div class="field"><label>Card summary</label><textarea name="summary" style="min-height:60px">{{ e.summary if e else '' }}</textarea>
+    <div class="hint">The short text on the experiment card.</div></div>
+  <div class="field"><label>Full description</label><textarea name="description">{{ e.description if e else '' }}</textarea>
+    <div class="hint">Shown in the detail popup.</div></div>
+  <div class="field"><label>Objectives</label><textarea name="objectives" placeholder="One per line">{{ e.objectives if e else '' }}</textarea></div>
+  <div class="field"><label>Apparatus</label><textarea name="apparatus" placeholder="One per line">{{ e.apparatus if e else '' }}</textarea></div>
+  <div class="field"><label>Session length (minutes)</label><input type="number" name="max_duration_min" value="{{ e.max_duration_min if e else 60 }}" min="5" max="240"></div>
+  <div class="field"><label>Lab manual (PDF)</label><input type="file" name="sop_pdf" accept="application/pdf">
+    <div class="hint">{% if e and e.sop_pdf %}Currently {{ e.sop_pdf }} — uploading replaces it.{% else %}Students download this from the detail popup.{% endif %}</div></div>
+{% endmacro %}
+
+<div class="modal" id="addExp" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <form method="post" enctype="multipart/form-data">
+      <div class="modal-head"><h2 style="margin:0">Add an experiment</h2><button type="button" class="x-btn" data-close>&times;</button></div>
+      <div class="modal-body">{{ exp_fields() }}</div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn">Add experiment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% for e in experiments %}
+<div class="modal" id="edit{{ e.id }}" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <form method="post" action="{{ url_for('admin.edit_experiment', experiment_id=e.id) }}" enctype="multipart/form-data">
+      <div class="modal-head"><h2 style="margin:0">Edit {{ e.name }}</h2><button type="button" class="x-btn" data-close>&times;</button></div>
+      <div class="modal-body">
+        {{ exp_fields(e) }}
+        <div class="field"><span class="check">
+          <input type="checkbox" id="act{{ e.id }}" name="is_active" {{ 'checked' if e.is_active }}>
+          <label for="act{{ e.id }}">Visible to students</label>
+        </span></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn">Save changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/modal.js') }}"></script>{% endblock %}

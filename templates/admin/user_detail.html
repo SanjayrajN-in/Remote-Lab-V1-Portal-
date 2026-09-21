@@ -1,0 +1,80 @@
+{% extends "_admin_shell.html" %}
+{% set active = 'users' %}
+{% block title %}{{ user.full_name }} - IKEN Remote Lab admin{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div><div class="eyebrow">User</div><h1>{{ user.full_name }}</h1></div>
+  <a href="{{ url_for('admin.users') }}" class="btn btn-ghost">Back to users</a>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-head"><h3>Account</h3></div>
+    <div class="deflist">
+      <div><dt>Email</dt><dd>{{ user.email }}</dd></div>
+      <div><dt>Roll number</dt><dd>{{ user.roll_number or '—' }}</dd></div>
+      <div><dt>Department</dt><dd>{{ user.department.name if user.department else '—' }}</dd></div>
+      <div><dt>Role</dt><dd>{{ user.role }}</dd></div>
+      <div><dt>Status</dt><dd><span class="badge {{ 'b-active' if user.is_active else 'b-cancelled' }}">{{ 'active' if user.is_active else 'disabled' }}</span></dd></div>
+      <div><dt>Created</dt><dd>{{ user.created_at | dt }}</dd></div>
+      <div><dt>Last sign-in</dt><dd>{{ user.last_login | dt if user.last_login else 'never' }}</dd></div>
+      <div><dt>Courses</dt><dd>{{ user.courses | map(attribute='code') | join(', ') or '—' }}</dd></div>
+    </div>
+    <form method="post" action="{{ url_for('admin.reset_user_password', user_id=user.id) }}" style="margin-top:1rem"
+          onsubmit="return confirm('Issue a new temporary password and email it to {{ user.email }}?')">
+      <button class="btn btn-amber btn-sm">Reset password</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h3>Edit</h3></div>
+    <form method="post" action="{{ url_for('admin.edit_user', user_id=user.id) }}">
+      <div class="field"><label for="full_name">Full name</label><input type="text" id="full_name" name="full_name" value="{{ user.full_name }}" required></div>
+      <div class="field"><label for="roll_number">Roll number</label><input type="text" id="roll_number" name="roll_number" value="{{ user.roll_number or '' }}"></div>
+      <div class="field"><label for="role">Role</label>
+        <select id="role" name="role">
+          <option value="user" {{ 'selected' if not user.is_admin }}>Student</option>
+          <option value="admin" {{ 'selected' if user.is_admin }}>Administrator</option>
+        </select></div>
+      <div class="field"><label>Enrolled courses</label>
+        {% for c in courses %}
+        <span class="check" style="margin-bottom:.3rem">
+          <input type="checkbox" id="uc{{ c.id }}" name="courses" value="{{ c.id }}" {{ 'checked' if c in user.courses }}>
+          <label for="uc{{ c.id }}">{{ c.code }} — {{ c.name }}</label>
+        </span>
+        {% else %}<p class="tiny muted">No courses defined yet.</p>{% endfor %}
+        <div class="hint">This is exactly what the student sees on their dashboard.</div>
+      </div>
+      <div class="field"><span class="check">
+        <input type="checkbox" id="is_active" name="is_active" {{ 'checked' if user.is_active }}>
+        <label for="is_active">Account is active</label>
+      </span></div>
+      <button class="btn">Save changes</button>
+    </form>
+  </div>
+</div>
+
+<div class="card card-flush" style="margin-top:1.15rem">
+  <div class="card-head"><h3>Booking history</h3><span class="tiny muted">{{ bookings | length }} total</span></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Booking</th><th>Experiment</th><th>Start</th><th>Duration</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for b in bookings %}
+        <tr>
+          <td class="mono">{{ b.code }}</td>
+          <td>{{ b.experiment.name }}</td>
+          <td class="nowrap">{{ b.start_time | dt }}</td>
+          <td>{{ b.duration_min }} min</td>
+          <td><span class="badge b-{{ b.live_status }}">{{ b.live_status }}</span></td>
+          <td class="right"><a href="{{ url_for('admin.booking_detail', code=b.code) }}" class="btn btn-ghost btn-sm">View</a></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="empty">This user hasn't booked anything yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "_admin_shell.html" %}
+{% set active = 'sessions' %}
+{% block title %}Sessions - IKEN Remote Lab admin{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div><div class="eyebrow">Scheduling</div><h1>Sessions</h1>
+    <p class="muted" style="margin:0">A session is the key a student's browser carries to the bench. It dies when the slot does.</p></div>
+</div>
+
+<div class="card card-flush">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Key</th><th>Student</th><th>Experiment</th><th>Node</th><th>Issued</th><th>Expires</th><th>State</th><th></th></tr></thead>
+      <tbody>
+      {% for s in sessions %}
+        <tr>
+          <td class="mono">{{ s.session_key }}</td>
+          <td>{{ s.user.full_name }}<br><span class="tiny muted">{{ s.user.email }}</span></td>
+          <td>{{ s.experiment.name }}</td>
+          <td class="tiny">{{ s.node.name if s.node else '—' }}</td>
+          <td class="tiny nowrap">{{ s.created_at | dt }}</td>
+          <td class="tiny nowrap">{{ s.expires_at | dt }}</td>
+          <td>
+            {% if s.is_live %}<span class="badge b-active">live · {{ s.seconds_left | duration }}</span>
+            {% else %}<span class="badge b-neutral">{{ s.status }}</span>{% endif %}
+          </td>
+          <td class="right">
+            {% if s.is_live %}
+            <form method="post" action="{{ url_for('admin.end_session', session_id=s.id) }}"
+                  onsubmit="return confirm('End this session now?')">
+              <button class="btn btn-coral btn-sm">End</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="empty">
+          <div class="empty-ico">◷</div><h3>No sessions yet</h3>
+          <p>Sessions appear when a student starts a booked slot.</p>
+        </td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

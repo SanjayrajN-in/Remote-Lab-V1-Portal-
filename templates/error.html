@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card card center">
+    <div style="font-size:3rem;font-weight:800;color:var(--indigo);letter-spacing:-.04em">{{ code }}</div>
+    <h2>{{ title }}</h2>
+    <p>{{ message }}</p>
+    <a href="{{ url_for('portal.home') }}" class="btn">Back to the portal</a>
+  </div>
+</div>
+{% endblock %}

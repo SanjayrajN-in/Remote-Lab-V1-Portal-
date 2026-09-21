@@ -1,0 +1,10 @@
+{% extends "email/_base.html" %}
+{% block content %}
+<h2 style="margin:0 0 12px;font-size:19px">Reset your password</h2>
+<p>Hello {{ user.full_name }},</p>
+<p>Use the button below to choose a new password. The link works for 24 hours.</p>
+<p style="text-align:center;margin:22px 0">
+  <a href="{{ url }}" style="display:inline-block;background:#4b48c6;color:#fff;padding:12px 26px;border-radius:999px;text-decoration:none;font-weight:700">Choose a new password</a>
+</p>
+<p style="font-size:13px;color:#83839f">If you didn't ask for this, ignore this message — your password stays as it is.</p>
+{% endblock %}

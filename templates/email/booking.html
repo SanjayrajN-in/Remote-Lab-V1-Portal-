@@ -1,0 +1,19 @@
+{% extends "email/_base.html" %}
+{% block content %}
+<h2 style="margin:0 0 12px;font-size:19px">Slot confirmed</h2>
+<p>Hello {{ b.user.full_name }},</p>
+<p>Your bench is reserved.</p>
+<table style="width:100%;background:#f7f8fd;border-radius:10px;padding:14px;margin:16px 0">
+  <tr><td style="font-size:13px;color:#83839f;padding:4px 10px">Booking ID</td>
+      <td style="font-family:monospace;font-size:14px;font-weight:700;padding:4px 10px">{{ b.code }}</td></tr>
+  <tr><td style="font-size:13px;color:#83839f;padding:4px 10px">Experiment</td>
+      <td style="font-size:14px;font-weight:600;padding:4px 10px">{{ b.experiment.name }}</td></tr>
+  <tr><td style="font-size:13px;color:#83839f;padding:4px 10px">Starts</td>
+      <td style="font-size:14px;padding:4px 10px">{{ b.start_time | dt('%A %d %B %Y, %H:%M') }} {{ tz_label }}</td></tr>
+  <tr><td style="font-size:13px;color:#83839f;padding:4px 10px">Duration</td>
+      <td style="font-size:14px;padding:4px 10px">{{ b.duration_min }} minutes</td></tr>
+</table>
+<p>Open <strong>My bookings</strong> at your slot time and choose <strong>Go to lab</strong>.
+   The bench opens five minutes early.</p>
+<p style="font-size:13px;color:#83839f">Can't make it? Cancel from My bookings so someone else can take the slot.</p>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "_shell.html" %}
+{% set active = 'home' %}
+{% block title %}IKEN Remote Lab - hardware you can book{% endblock %}
+{% block content %}
+
+<div class="landing">
+  <!-- Left: what this is -->
+  <div class="landing-intro">
+    <img src="{{ url_for('static', filename='img/iken-logo.png') }}"
+         alt="IKEN — IISc Knowledge and E-Learning Network" class="landing-logo">
+
+    <h1>Real hardware.<br><em>Booked by the hour.</em></h1>
+    <p class="lead">
+      The IKEN Remote Lab gives students exclusive, scheduled access to physical microcontroller benches
+      over the internet — flash your own firmware, watch the serial stream, and
+      see the board on camera while it runs.
+    </p>
+
+    <div class="landing-points">
+      <div>
+        <span class="lp-ico t-teal">◉</span>
+        <div>
+          <strong>One bench, yours alone</strong>
+          <p>A booking reserves a specific rig. Nobody else holds the serial port
+             while your slot is running.</p>
+        </div>
+      </div>
+      <div>
+        <span class="lp-ico t-indigo">⌁</span>
+        <div>
+          <strong>Your own firmware</strong>
+          <p>Upload a compiled <span class="mono">.bin</span>, <span class="mono">.hex</span>
+             or <span class="mono">.out</span>, flash it to the board, and plot
+             sensor values live.</p>
+        </div>
+      </div>
+      <div>
+        <span class="lp-ico t-amber">◷</span>
+        <div>
+          <strong>Access ends with the slot</strong>
+          <p>Each session carries a key that expires when your hour does. The
+             bench resets for whoever is next.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: sign in, or where to go if already signed in -->
+  <div class="landing-auth">
+    <div class="card">
+      {% if current_user.is_authenticated %}
+        <h2>Welcome back</h2>
+        <p class="tiny muted">Signed in as {{ current_user.full_name }}.</p>
+        <a href="{{ url_for('portal.dashboard') }}" class="btn btn-block btn-lg">My experiments</a>
+        <a href="{{ url_for('portal.bookings') }}" class="btn btn-ghost btn-block" style="margin-top:.6rem">My bookings</a>
+      {% else %}
+        <h2>Sign in</h2>
+        <p class="tiny muted">Use the address your invitation was sent to.</p>
+        <form method="post" action="{{ url_for('auth.login') }}" novalidate>
+          <input type="hidden" name="from" value="home">
+          <div class="field">
+            <label for="home_email">Email</label>
+            <input type="email" id="home_email" name="email" value="{{ email or '' }}"
+                   required autocomplete="username" placeholder="you@iisc.ac.in">
+          </div>
+          <div class="field">
+            <label for="home_password">Password</label>
+            <input type="password" id="home_password" name="password" required
+                   autocomplete="current-password">
+          </div>
+          <div class="row-between" style="margin-bottom:1rem">
+            <span class="check">
+              <input type="checkbox" id="home_remember" name="remember">
+              <label for="home_remember">Keep me signed in</label>
+            </span>
+            <a href="{{ url_for('auth.forgot_password') }}" class="tiny">Forgot password?</a>
+          </div>
+          <button type="submit" class="btn btn-brand btn-block btn-lg">Sign in</button>
+        </form>
+        <p class="tiny muted center" style="margin:1rem 0 0">
+          <a href="{{ url_for('auth.admin_login') }}">Administrator sign-in</a>
+        </p>
+      {% endif %}
+    </div>
+
+    <div class="card" style="margin-top:1.15rem">
+      <h3 style="font-size:.98rem">No account yet?</h3>
+      <p class="tiny" style="margin-bottom:.5rem">
+        Accounts are created by your lab administrator, who also enrols you on a
+        course. Watch for the invitation email — it carries a temporary password,
+        and you'll be asked to replace it when you first sign in.
+      </p>
+      <p class="tiny muted" style="margin:0">
+        Nothing arrived? Check your spam folder before asking for a resend.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:1.6rem">
+  <div class="row-between">
+    <div>
+      <h3 style="margin-bottom:.3rem">IISc Knowledge and E-Learning Network</h3>
+      <p class="tiny muted" style="margin:0">
+        IKEN Remote Lab, Indian Institute of Science, Bangalore
+      </p>
+    </div>
+    <div class="tiny muted right">
+      office.cce@iisc.ac.in
+    </div>
+  </div>
+</div>
+{% endblock %}

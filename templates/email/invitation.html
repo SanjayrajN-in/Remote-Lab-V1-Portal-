@@ -1,0 +1,18 @@
+{% extends "email/_base.html" %}
+{% block content %}
+<h2 style="margin:0 0 12px;font-size:19px">Your account is ready</h2>
+<p>Hello {{ user.full_name }},</p>
+<p>An account has been created for you on the Remote Lab portal. Sign in with the
+   temporary password below — you'll be asked to choose your own straight away.</p>
+<table style="width:100%;background:#f7f8fd;border-radius:10px;padding:14px;margin:16px 0">
+  <tr><td style="font-size:13px;color:#83839f;padding:4px 10px">Email</td>
+      <td style="font-size:14px;font-weight:600;padding:4px 10px">{{ user.email }}</td></tr>
+  <tr><td style="font-size:13px;color:#83839f;padding:4px 10px">Temporary password</td>
+      <td style="font-family:monospace;font-size:15px;font-weight:700;padding:4px 10px">{{ temp_password }}</td></tr>
+</table>
+<p style="text-align:center;margin:22px 0">
+  <a href="{{ url }}" style="display:inline-block;background:#4b48c6;color:#fff;padding:12px 26px;border-radius:999px;text-decoration:none;font-weight:700">Sign in to the portal</a>
+</p>
+<p style="font-size:13px;color:#83839f">Your experiments appear on the dashboard once you sign in.
+   If you weren't expecting this, tell your lab administrator.</p>
+{% endblock %}

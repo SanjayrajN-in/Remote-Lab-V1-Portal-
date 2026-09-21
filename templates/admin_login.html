@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Administrator sign-in - IKEN Remote Lab{% endblock %}
+{% block body %}
+<div class="auth-wrap auth-staff">
+  <div class="auth-card stack">
+    <div class="center">
+      <span class="logo-chip" style="display:inline-block;padding:.7rem .9rem">
+        <img src="{{ url_for('static', filename='img/iken-mark.png') }}"
+             alt="IKEN — IISc Knowledge and E-Learning Network" style="height:40px;width:auto;display:block">
+      </span>
+      <div class="wordmark" style="color:#fff;font-size:1.15rem;margin-top:.7rem">IKEN Remote Lab</div>
+      <div class="tiny" style="color:rgba(255,255,255,.6)">Administration</div>
+    </div>
+    <div class="card">
+      <div class="staff-tag">Staff access</div>
+      <h2>Administrator sign-in</h2>
+      <p class="tiny muted">This is the lab management panel. Students sign in
+         <a href="{{ url_for('auth.login') }}">here</a> instead.</p>
+      <form method="post" novalidate>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" value="{{ email }}" required autofocus autocomplete="username">
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password">
+        </div>
+        <div class="row-between" style="margin-bottom:1.1rem">
+          <span class="check">
+            <input type="checkbox" id="remember" name="remember">
+            <label for="remember">Keep me signed in</label>
+          </span>
+          <a href="{{ url_for('auth.forgot_password') }}" class="tiny">Forgot password?</a>
+        </div>
+        <button type="submit" class="btn btn-block btn-lg btn-amber">Sign in to admin panel</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

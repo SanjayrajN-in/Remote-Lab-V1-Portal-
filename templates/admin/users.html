@@ -1,0 +1,117 @@
+{% extends "_admin_shell.html" %}
+{% set active = 'users' %}
+{% block title %}Users - IKEN Remote Lab admin{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div><div class="eyebrow">People</div><h1>Users</h1></div>
+  <div class="row">
+    <button class="btn btn-ghost" data-open="addUser">Add one user</button>
+    <button class="btn btn-teal" data-open="bulkUser">Bulk upload</button>
+  </div>
+</div>
+
+<div class="card card-flush">
+  <div class="card-head">
+    <form method="get" class="row" style="margin:0">
+      <input type="text" name="q" value="{{ q }}" placeholder="Search name, email or roll number" style="min-width:280px">
+      <button class="btn btn-sm">Search</button>
+      {% if q %}<a href="{{ url_for('admin.users') }}" class="btn btn-ghost btn-sm">Clear</a>{% endif %}
+    </form>
+    <span class="tiny muted">{{ users | length }} shown</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Name</th><th>Email</th><th>Courses</th><th>Role</th><th>Status</th><th>Last sign-in</th><th></th></tr></thead>
+      <tbody>
+      {% for u in users %}
+        <tr>
+          <td><strong>{{ u.full_name }}</strong>{% if u.roll_number %}<br><span class="tiny muted mono">{{ u.roll_number }}</span>{% endif %}</td>
+          <td>{{ u.email }}</td>
+          <td class="tiny">{{ u.courses | map(attribute='code') | join(', ') or '—' }}</td>
+          <td><span class="badge {{ 'b-completed' if u.is_admin else 'b-neutral' }}">{{ u.role }}</span></td>
+          <td>
+            <span class="badge {{ 'b-active' if u.is_active else 'b-cancelled' }}">{{ 'active' if u.is_active else 'disabled' }}</span>
+            {% if u.must_change_password %}<br><span class="tiny muted">awaiting first sign-in</span>{% endif %}
+          </td>
+          <td class="tiny nowrap">{{ u.last_login | dt if u.last_login else '—' }}</td>
+          <td class="right nowrap">
+            <a href="{{ url_for('admin.user_detail', user_id=u.id) }}" class="btn btn-ghost btn-sm">View</a>
+            <form method="post" action="{{ url_for('admin.delete_user', user_id=u.id) }}" style="display:inline"
+                  onsubmit="return confirm('Delete {{ u.email }} and all their bookings? This cannot be undone.')">
+              <button class="btn btn-coral btn-sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="empty">
+          <div class="empty-ico">◉</div>
+          <h3>{{ 'No matches' if q else 'No users yet' }}</h3>
+          <p>{{ 'Try a different search.' if q else 'Add users one at a time, or upload a CSV or Excel file.' }}</p>
+        </td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal" id="addUser" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <form method="post" action="{{ url_for('admin.create_user') }}">
+      <div class="modal-head"><h2 style="margin:0">Add a user</h2><button type="button" class="x-btn" data-close>&times;</button></div>
+      <div class="modal-body">
+        <div class="field"><label for="full_name">Full name</label><input type="text" id="full_name" name="full_name" required></div>
+        <div class="field"><label for="new_email">Email</label><input type="email" id="new_email" name="email" required>
+          <div class="hint">The invitation and temporary password go here.</div></div>
+        <div class="field"><label for="role">Role</label>
+          <select id="role" name="role"><option value="user">Student</option><option value="admin">Administrator</option></select></div>
+        <div class="field"><label>Course</label>
+          <select name="course">
+            <option value="">— none —</option>
+            {% for c in courses %}<option value="{{ c.id }}">{{ c.code }} — {{ c.name }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn">Add user and send invitation</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal" id="bulkUser" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <form method="post" action="{{ url_for('admin.bulk_upload') }}" enctype="multipart/form-data">
+      <div class="modal-head"><h2 style="margin:0">Bulk upload users</h2><button type="button" class="x-btn" data-close>&times;</button></div>
+      <div class="modal-body">
+        <p>Upload a CSV or Excel file. Every new user gets an account and an
+           invitation email with a temporary password.</p>
+        <div class="field">
+          <label for="file">File</label>
+          <input type="file" id="file" name="file" accept=".csv,.tsv,.xlsx,.xlsm" required>
+        </div>
+        <h3>Columns</h3>
+        <p class="tiny"><strong>Required:</strong> <span class="mono">full_name</span>, <span class="mono">email</span><br>
+           <strong>Optional:</strong> <span class="mono">department</span>,
+           <span class="mono">courses</span>, <span class="mono">role</span></p>
+        <p class="tiny muted"><span class="mono">courses</span> takes course codes separated by semicolons, e.g. <span class="mono">E3-241;E9-201</span>.</p>
+        <pre class="mono tiny" style="background:#f7f8fd;padding:.8rem;border-radius:10px;overflow-x:auto">full_name,email,courses
+Asha Rao,asha@iisc.ac.in,E3-241
+Vikram N,vikram@iisc.ac.in,E3-241;E9-201</pre>
+        <p class="tiny" style="margin-top:.6rem"><a href="{{ url_for('admin.sample_csv') }}" class="btn btn-ghost btn-sm">⬇ Download sample CSV</a></p>
+        <p class="tiny muted">Rows with a bad email or an address that already exists are
+           reported and skipped; the rest still import.</p>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn btn-teal">Upload and invite</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/modal.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "_admin_shell.html" %}
+{% set active = 'courses' %}
+{% block title %}Courses - IKEN Remote Lab admin{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div><div class="eyebrow">People</div><h1>Courses</h1>
+    <p class="muted" style="margin:0">Enrolment decides which experiments a student can see and book.</p></div>
+  <button class="btn" data-open="addCourse">Add course</button>
+</div>
+
+<div class="card card-flush">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Code</th><th>Name</th><th>Experiments</th><th>Students</th><th></th></tr></thead>
+      <tbody>
+      {% for c in courses %}
+        <tr>
+          <td class="mono"><strong>{{ c.code }}</strong></td>
+          <td>{{ c.name }}{% if c.description %}<br><span class="tiny muted">{{ c.description }}</span>{% endif %}</td>
+          <td>{{ c.experiments | length }}</td>
+          <td>{{ c.students | length }}</td>
+          <td class="right">
+            <form method="post" action="{{ url_for('admin.delete_course', course_id=c.id) }}"
+                  onsubmit="return confirm('Delete {{ c.code }}?')">
+              <button class="btn btn-coral btn-sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="empty">
+          <div class="empty-ico">▤</div><h3>No courses yet</h3>
+          <p>Add a course, then attach experiments to it.</p>
+        </td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal" id="addCourse" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <form method="post">
+      <div class="modal-head"><h2 style="margin:0">Add a course</h2><button type="button" class="x-btn" data-close>&times;</button></div>
+      <div class="modal-body">
+        <div class="field"><label for="code">Course code</label><input type="text" id="code" name="code" placeholder="E3-241" required></div>
+        <div class="field"><label for="name">Course name</label><input type="text" id="name" name="name" placeholder="Embedded Systems Laboratory" required></div>
+        <div class="field"><label for="description">Description</label><textarea id="description" name="description"></textarea></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn">Add course</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/modal.js') }}"></script>{% endblock %}

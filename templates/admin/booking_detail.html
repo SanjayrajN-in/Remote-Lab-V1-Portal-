@@ -1,0 +1,66 @@
+{% extends "_admin_shell.html" %}
+{% set active = 'bookings' %}
+{% block title %}Booking {{ b.code }} - IKEN Remote Lab admin{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div><div class="eyebrow">Booking</div><h1 class="mono">{{ b.code }}</h1></div>
+  <a href="{{ url_for('admin.bookings') }}" class="btn btn-ghost">Back to bookings</a>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-head"><h3>Booking</h3><span class="badge b-{{ b.live_status }}">{{ b.live_status }}</span></div>
+    <div class="deflist">
+      <div><dt>Booking ID</dt><dd class="mono">{{ b.code }}</dd></div>
+      <div><dt>Experiment</dt><dd>{{ b.experiment.name }}</dd></div>
+      <div><dt>Course</dt><dd>{{ b.experiment.course.code if b.experiment.course else '—' }}</dd></div>
+      <div><dt>Start time</dt><dd>{{ b.start_time | dt }}</dd></div>
+      <div><dt>End time</dt><dd>{{ b.end_time | dt }}</dd></div>
+      <div><dt>Duration</dt><dd>{{ b.duration_min }} minutes</dd></div>
+      <div><dt>Lab node</dt><dd>{{ b.node.name ~ ' (' ~ b.node.ip_address ~ ')' if b.node else 'not assigned' }}</dd></div>
+      <div><dt>Booked at</dt><dd>{{ b.created_at | dt }}</dd></div>
+      {% if b.completed_at %}<div><dt>Completed at</dt><dd>{{ b.completed_at | dt }}</dd></div>{% endif %}
+      {% if b.cancelled_at %}<div><dt>Cancelled at</dt><dd>{{ b.cancelled_at | dt }}</dd></div>{% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h3>Student</h3>
+      <a href="{{ url_for('admin.user_detail', user_id=b.user.id) }}" class="btn btn-ghost btn-sm">Open profile</a></div>
+    <div class="deflist">
+      <div><dt>Name</dt><dd>{{ b.user.full_name }}</dd></div>
+      <div><dt>Email</dt><dd>{{ b.user.email }}</dd></div>
+      <div><dt>Roll number</dt><dd>{{ b.user.roll_number or '—' }}</dd></div>
+      <div><dt>Department</dt><dd>{{ b.user.department.name if b.user.department else '—' }}</dd></div>
+      <div><dt>Courses</dt><dd>{{ b.user.courses | map(attribute='code') | join(', ') or '—' }}</dd></div>
+      <div><dt>Account status</dt><dd>{{ 'active' if b.user.is_active else 'disabled' }}</dd></div>
+      <div><dt>Last sign-in</dt><dd>{{ b.user.last_login | dt if b.user.last_login else 'never' }}</dd></div>
+    </div>
+
+    {% if b.session %}
+    <div class="card-head" style="margin-top:1.4rem"><h3>Session</h3></div>
+    <div class="deflist">
+      <div><dt>Session key</dt><dd class="mono">{{ b.session.session_key }}</dd></div>
+      <div><dt>Issued</dt><dd>{{ b.session.created_at | dt }}</dd></div>
+      <div><dt>Expires</dt><dd>{{ b.session.expires_at | dt }}</dd></div>
+      <div><dt>Delivered to node</dt><dd>{{ 'yes' if b.session.pushed_to_node else 'via poll' }}</dd></div>
+      <div><dt>State</dt><dd>{{ b.session.status }}</dd></div>
+    </div>
+    {% if b.session.is_live %}
+    <form method="post" action="{{ url_for('admin.end_session', session_id=b.session.id) }}" style="margin-top:1rem"
+          onsubmit="return confirm('End this session now?')">
+      <button class="btn btn-coral btn-sm">End session now</button>
+    </form>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<div class="card" style="margin-top:1.15rem">
+  <form method="post" action="{{ url_for('admin.delete_booking', code=b.code) }}"
+        onsubmit="return confirm('Delete booking {{ b.code }}? This cannot be undone.')">
+    <button class="btn btn-coral">Delete this booking</button>
+  </form>
+</div>
+{% endblock %}

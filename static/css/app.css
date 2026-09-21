@@ -1,0 +1,2340 @@
+/* Remote Lab portal - visual language taken from the education app-kit
+   reference: white cards floating on a cool grey field, generous 18px radii,
+   flat saturated accents (indigo / teal / coral / amber), pill controls, and
+   ring gauges instead of bar charts for at-a-glance state. */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Palette taken from the IKEN mark: navy #011a38, orange #f48221.
+     Navy carries structure and primary actions; orange is the brand accent
+     and is spent sparingly so it keeps its force. Teal and coral stay for
+     status only - online and destructive - where hue has to mean something
+     independent of branding. */
+  --navy: #011a38;
+  --navy-2: #0d2c52;
+  --navy-3: #17406f;
+  --navy-soft: #e7ecf3;
+  --orange: #f48221;
+  --orange-deep: #d86c0e;
+  --orange-soft: #fdeedd;
+
+  /* Legacy aliases: existing rules keep working, now in brand colours. */
+  --indigo: var(--navy);
+  --indigo-deep: var(--navy);
+  --indigo-soft: var(--navy-soft);
+  --amber: #f48221;
+  --amber-soft: #fdeedd;
+
+  --teal: #12a594;
+  --teal-soft: #d9f5f0;
+  --coral: #e03a4e;
+  --coral-soft: #fce4e7;
+
+  --ink: #011a38;
+  --ink-2: #46586e;
+  --ink-3: #7d8ca0;
+  --line: #e2e8f0;
+  --bg: #f4f6fa;
+  --card: #ffffff;
+
+  --r-sm: 10px;
+  --r: 18px;
+  --r-lg: 26px;
+  --shadow: 0 1px 2px rgba(1, 26, 56, .04), 0 8px 24px rgba(1, 26, 56, .07);
+  --shadow-lg: 0 12px 40px rgba(1, 26, 56, .14);
+  --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { margin: 0 0 .4em; line-height: 1.2; letter-spacing: -.02em; font-weight: 800; }
+h1 { font-size: 1.9rem; }
+h2 { font-size: 1.35rem; }
+h3 { font-size: 1.05rem; }
+p { margin: 0 0 1em; color: var(--ink-2); }
+a { color: var(--indigo); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+:focus-visible {
+  outline: 3px solid var(--indigo);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.mono { font-family: var(--mono); font-size: .86em; letter-spacing: -.01em; }
+.muted { color: var(--ink-3); }
+.tiny { font-size: .8rem; }
+/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }.center { text-align: center; }
+.right { text-align: right; }
+.nowrap { white-space: nowrap; }
+.stack > * + * { margin-top: 1.15rem; }
+.row { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.row-between { display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.grow { flex: 1; }
+
+/* ---------------------------------------------------------------- shell */
+
+.shell { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 244px;
+  flex-shrink: 0;
+  background: var(--indigo-deep);
+  background-image: linear-gradient(168deg, #0d2c52 0%, #011a38 100%);
+  color: #fff;
+  padding: 1.6rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.brand { display: flex; align-items: center; gap: .65rem; padding: 0 .5rem; }
+.brand-mark {
+  width: 38px; height: 38px; border-radius: 11px;
+  background: var(--teal);
+  display: grid; place-items: center;
+  font-weight: 800; font-size: 1rem; color: #fff;
+  flex-shrink: 0;
+}
+.brand-name { font-weight: 800; font-size: 1.02rem; letter-spacing: -.02em; }
+.brand-sub { font-size: .72rem; color: rgba(255,255,255,.55); font-weight: 500; }
+
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav-label {
+  font-size: .68rem; text-transform: uppercase; letter-spacing: .09em;
+  color: rgba(255,255,255,.4); font-weight: 700;
+  padding: .8rem .75rem .35rem;
+}
+.nav a {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .62rem .75rem;
+  border-radius: 11px;
+  color: rgba(255,255,255,.74);
+  font-weight: 600; font-size: .9rem;
+  transition: background .15s, color .15s;
+}
+.nav a:hover { background: rgba(255,255,255,.09); color: #fff; text-decoration: none; }
+.nav a.active { background: #fff; color: var(--indigo-deep); }
+.nav a .ico { width: 18px; text-align: center; flex-shrink: 0; opacity: .9; }
+.nav-foot { margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,.12); }
+
+.main { flex: 1; min-width: 0; padding: 1.7rem 2rem 4rem; }
+.page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.page-head .eyebrow {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--ink-3); font-weight: 700; margin-bottom: .15rem;
+}
+
+/* --------------------------------------------------------------- topbar */
+
+.topbar {/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  padding: .9rem 1.6rem;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  position: sticky; top: 0; z-index: 40;
+}
+.topbar .brand-name { color: var(--ink); }
+.topbar .brand-sub { color: var(--ink-3); }
+.topbar-nav { display: flex; gap: .3rem; align-items: center; flex-wrap: wrap; }
+.topbar-nav a {
+  padding: .45rem .85rem; border-radius: 999px;
+  font-weight: 600; font-size: .88rem; color: var(--ink-2);
+}
+.topbar-nav a:hover { background: var(--indigo-soft); color: var(--indigo); text-decoration: none; }
+.topbar-nav a.active { background: var(--indigo); color: #fff; }
+/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+/* -------------------------------------------------------------/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }---- card */
+/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+.card {/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+  background: var(--card);/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+  border-radius: var(--r);/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+  box-shadow: var(--shadow);/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+  padding: 1.35rem 1.5rem;/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+}/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+.card-head {/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 1rem; flex-wrap: wrap;
+  margin: -.2rem 0 1.1rem;
+}
+.card-head h2, .card-head h3 { margin: 0; }
+.card-flush { padding: 0; overflow: hidden; }
+.card-flush .card-head { margin: 0; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--line); }
+
+.grid { display: grid; gap: 1.15rem; }
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.grid-4 { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+
+/* ------------------------------------------------------------- stat tile */
+
+.stat { display: flex; align-items: center; gap: 1rem; }
+.stat-ico {
+  width: 48px; height: 48px; border-radius: 14px;
+  display: grid; place-items: center; font-size: 1.25rem; flex-shrink: 0;
+}
+.stat-value { font-size: 1.75rem; font-weight: 800; line-height: 1; letter-spacing: -.03em; }
+.stat-label { font-size: .82rem; color: var(--ink-3); font-weight: 600; margin-top: .25rem; }
+
+.t-indigo { background: var(--indigo-soft); color: var(--indigo); }
+.t-teal   { background: var(--teal-soft);   color: var(--teal); }
+.t-coral  { background: var(--coral-soft);  color: var(--coral); }
+.t-amber  { background: var(--amber-soft);  color: #a86a09; }
+
+/* --- signature element: ring gauge, used for node health and time left --- */
+
+.ring { --pct: 0; --ring-color: var(--teal); position: relative; width: 62px; height: 62px; flex-shrink: 0; }
+.ring::before {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(var(--ring-color) calc(var(--pct) * 1%), var(--line) 0);
+}
+.ring::after {
+  content: ''; position: absolute; inset: 6px; border-radius: 50%; background: var(--card);
+}
+.ring span {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: .78rem; font-weight: 800; z-index: 1; letter-spacing: -.02em;
+}
+.ring-lg { width: 92px; height: 92px; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+.ring-lg span { font-size: 1.1rem; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+.ring-lg::after { inset: 9px; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+/* -------------------------------------------------------------/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }-- buttons */
+/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+.btn {/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+  display: inline-flex; align-items: center; justify-content: ce/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }nter; gap: .45rem;
+  padding: .6rem 1.15rem;/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+  border: none; border-radius: 999px;/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+  background: var(--indigo); color: #fff;/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+  font-family: var(--font); font-weight: 700; font-size: .88rem;/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+  cursor: pointer; transition: filter .15s, transform .05s;/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+  text-decoration: none; white-space: nowrap;/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+}/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+.btn:hover { filter: brightness(1.08); text-decoration: none; co/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }lor: #fff; }
+.btn:active { transform: translateY(1px); }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+.btn[disabled], .btn.is-disabled {/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+  background: var(--line); color: var(--ink-3); cursor: not-allo/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }wed;
+  filter: none; transform: none;/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }
+}
+.btn-teal  { background: var(--teal); }
+.btn-coral { background: var(--coral); }
+.btn-amber { background: var(--amber); color: #4a3000; }
+.btn-ghost { background: transparent; color: var(--ink-2); box-shadow: inset 0 0 0 1.5px var(--line); }
+.btn-ghost:hover { background: var(--bg); color: var(--ink); }
+.btn-sm { padding: .38rem .8rem; font-size: .8rem; }
+.btn-lg { padding: .8rem 1.7rem; font-size: .96rem; }
+.btn-block { width: 100%; }
+
+/* ---------------------------------------------------------------- badges */
+
+.badge {
+  display: inline-flex; align-items: center; gap: .3rem;
+  padding: .22rem .68rem; border-radius: 999px;
+  font-size: .72rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.b-active, .b-online   { background: var(--teal-soft);  color: #0b7d70; }
+.b-upcoming            { background: var(--amber-soft); color: #a86a09; }
+.b-completed           { background: var(--indigo-soft); color: var(--indigo); }
+.b-cancelled, .b-offline, .b-error { background: var(--coral-soft); color: #c31f38; }
+.b-neutral, .b-info    { background: #eef0f7; color: var(--ink-2); }
+.b-warning             { background: var(--amber-soft); color: #a86a09; }
+
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.dot-on  { background: var(--teal); box-shadow: 0 0 0 3px var(--teal-soft); }
+.dot-off { background: var(--coral); box-shadow: 0 0 0 3px var(--coral-soft); }
+
+/* ----------------------------------------------------------------- forms */
+
+label { display: block; font-weight: 700; font-size: .82rem; margin-bottom: .35rem; color: var(--ink); }
+.field { margin-bottom: 1rem; }
+.hint { font-size: .78rem; color: var(--ink-3); margin-top: .3rem; }
+
+input[type=text], input[type=email], input[type=password], input[type=date],
+input[type=number], input[type=file], select, textarea {
+  width: 100%;
+  padding: .65rem .85rem;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-sm);
+  background: #fbfcfe;
+  font-family: var(--font); font-size: .92rem; color: var(--ink);
+  transition: border-color .15s, background .15s;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--indigo); background: #fff;
+}
+textarea { min-height: 88px; resize: vertical; line-height: 1.5; }
+input[type=checkbox] { width: auto; accent-color: var(--indigo); }
+.check { display: flex; align-items: center; gap: .5rem; font-weight: 600; font-size: .88rem; }
+.check label { margin: 0; font-weight: 600; }
+
+/* ---------------------------------------------------------------- tables */
+
+.table-wrap { overflow-x: auto; }
+/* Wide telemetry tables scroll rather than wrapping names into columns
+   one character wide. */
+.table-wide table { min-width: 1100px; }
+.table-wide td, .table-wide th { white-space: nowrap; }
+.table-wide .wrap { white-space: normal; max-width: 220px; }
+/* Keep the actions column reachable while the rest of the row scrolls,
+   so a destructive button never ends up clipped off-screen. */
+.table-wide thead th:last-child,
+.table-wide tbody td:last-child {
+  position: sticky; right: 0; z-index: 2;
+  background: var(--card);
+  box-shadow: -8px 0 12px -8px rgba(27, 26, 61, .18);
+}
+.table-wide thead th:last-child { background: #f7f8fd; }
+.table-wide tbody tr:hover td:last-child { background: #fafbff; }
+table { width: 100%; border-collapse: collapse; font-size: .89rem; }
+thead th {
+  text-align: left; padding: .8rem 1rem;
+  background: #f7f8fd;
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink-3); font-weight: 800; white-space: nowrap;
+  border-bottom: 1px solid var(--line);
+}
+tbody td { padding: .82rem 1rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: #fafbff; }
+.empty { padding: 3rem 1.5rem; text-align: center; color: var(--ink-3); }
+.empty-ico { font-size: 2.2rem; margin-bottom: .5rem; opacity: .5; }
+
+/* ------------------------------------------------------- experiment card */
+
+.exp-card {
+  background: var(--card); border-radius: var(--r);
+  box-shadow: var(--shadow); overflow: hidden;
+  display: flex; flex-direction: column;
+  transition: transform .18s, box-shadow .18s;
+}
+.exp-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.exp-top { padding: 1.3rem 1.4rem .9rem; flex: 1; cursor: pointer; }
+.exp-course {
+  display: inline-block; font-size: .68rem; font-weight: 800;
+  letter-spacing: .07em; text-transform: uppercase;
+  color: var(--navy); background: var(--navy-soft);
+  padding: .2rem .6rem; border-radius: 999px; margin-bottom: .6rem;
+}
+.exp-card h3 { font-size: 1.06rem; margin-bottom: .45rem; }
+.exp-summary {
+  font-size: .87rem; color: var(--ink-2); margin: 0;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.exp-meta {
+  display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
+  padding: .7rem 1.4rem; border-top: 1px solid var(--line);
+  font-size: .78rem; color: var(--ink-3); font-weight: 600;
+}
+.exp-foot { padding: 0 1.4rem 1.3rem; display: flex; gap: .5rem; }
+
+/* ----------------------------------------------------------- slot picker */
+
+.slot-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: .6rem; margin-top: .6rem;
+}
+.slot input { position: absolute; opacity: 0; pointer-events: none; }
+.slot-btn {
+  display: block; text-align: center;
+  padding: .68rem .4rem;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--teal-soft);
+  background: var(--teal-soft); color: #0b7d70;
+  font-weight: 700; font-size: .85rem;
+  cursor: pointer; transition: all .13s;
+  font-variant-numeric: tabular-nums;
+}
+.slot-btn.is-blocked {
+  background: #f4f5fa; border-color: #f4f5fa;
+  color: var(--ink-3); cursor: not-allowed; opacity: .75;
+}
+.slot-btn:hover { border-color: var(--teal); }
+.slot input:checked + .slot-btn {
+  background: var(--indigo); border-color: var(--indigo); color: #fff;
+  box-shadow: 0 4px 14px rgba(1, 26, 56, .30);
+}
+.slot input:focus-visible + .slot-btn { outline: 3px solid var(--indigo); outline-offset: 2px; }
+.slot-btn.is-taken {
+  background: var(--coral-soft); border-color: var(--coral-soft);
+  color: #c31f38; cursor: not-allowed; text-decoration: line-through;
+}
+.slot-btn.is-past {
+  background: #f4f5fa; border-color: #f4f5fa; color: var(--ink-3); cursor: not-allowed;
+}
+.slot-btn.is-yours {
+  background: var(--indigo-soft); border-color: var(--indigo); color: var(--indigo);
+  cursor: not-allowed;
+}
+.legend { display: flex; gap: 1.1rem; flex-wrap: wrap; font-size: .78rem; color: var(--ink-3); font-weight: 600; }
+.legend i { width: 13px; height: 13px; border-radius: 4px; display: inline-block; margin-right: .3rem; vertical-align: -2px; }
+
+/* -------------------------------------------------------- booking record */
+
+.booking-row {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1.05rem 1.5rem; border-bottom: 1px solid var(--line); flex-wrap: wrap;
+}
+.booking-row:last-child { border-bottom: none; }
+.booking-ico {
+  width: 46px; height: 46px; border-radius: 13px;
+  background: var(--indigo-deep); color: #fff;
+  display: grid; place-items: center; font-size: 1.15rem; flex-shrink: 0;
+}
+.booking-main { flex: 1; min-width: 190px; }
+.booking-main h4 { margin: 0 0 .2rem; font-size: .98rem; font-weight: 800; }
+.booking-when { font-size: .83rem; color: var(--ink-3); font-weight: 600; }
+.booking-side { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: .45rem; }
+
+/* ------------------------------------------------------------------ tabs */
+
+.tabs { display: flex; gap: .45rem; margin-bottom: 1.15rem; flex-wrap: wrap; }
+.tab {
+  padding: .5rem 1.05rem; border-radius: 999px;
+  background: var(--card); color: var(--ink-2);
+  font-weight: 700; font-size: .86rem; cursor: pointer;
+  border: none; font-family: var(--font); box-shadow: var(--shadow);
+}
+.tab:hover { color: var(--ink); }
+.tab.active { background: var(--indigo-deep); color: #fff; }
+
+/* ----------------------------------------------------------------- modal */
+
+.modal {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(1, 26, 56, .48);
+  backdrop-filter: blur(3px);
+  display: none; align-items: center; justify-content: center; padding: 1.5rem;
+}
+.modal.open { display: flex; }
+.modal-box {
+  background: var(--card); border-radius: var(--r-lg);
+  width: 100%; max-width: 620px; max-height: 88vh; overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  animation: pop .2s ease-out;
+}
+.modal-box-wide { max-width: 760px; }
+@keyframes pop { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { .modal-box { animation: none; } * { transition: none !important; } }
+.modal-head {
+  padding: 1.4rem 1.6rem 1rem; border-bottom: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
+}
+.modal-body { padding: 1.4rem 1.6rem; }
+.modal-foot {
+  padding: 1.1rem 1.6rem; border-top: 1px solid var(--line);
+  display: flex; gap: .6rem; justify-content: flex-end; flex-wrap: wrap;
+  position: sticky; bottom: 0; background: var(--card);
+}
+.x-btn {
+  background: none; border: none; font-size: 1.5rem; line-height: 1;
+  color: var(--ink-3); cursor: pointer; padding: 0 .2rem;
+}
+.x-btn:hover { color: var(--ink); }
+
+.deflist { display: grid; gap: .5rem; }
+.deflist > div {
+  display: flex; gap: 1rem; padding: .62rem .9rem;
+  background: #f7f8fd; border-radius: var(--r-sm);
+  border-left: 3px solid var(--indigo);
+}
+.deflist dt { font-weight: 700; font-size: .84rem; min-width: 132px; color: var(--ink); }
+.deflist dd { margin: 0; font-size: .89rem; color: var(--ink-2); }
+
+/* ---------------------------------------------------------------- flash */
+
+.flashes { position: fixed; top: 1rem; right: 1rem; z-index: 200; display: flex; flex-direction: column; gap: .5rem; max-width: 400px; }
+.flash {
+  padding: .8rem 1.1rem; border-radius: var(--r-sm);
+  background: var(--card); box-shadow: var(--shadow-lg);
+  font-size: .88rem; font-weight: 600; border-left: 4px solid var(--indigo);
+  display: flex; gap: .6rem; align-items: flex-start;
+}
+.flash-success { border-left-color: var(--teal); }
+.flash-error   { border-left-color: var(--coral); }
+.flash-info    { border-left-color: var(--indigo); }
+.flash-warning { border-left-color: var(--amber); }
+
+/* ----------------------------------------------------------------- hero */
+
+.hero {
+  background: linear-gradient(135deg, #0d2c52, #011a38 65%, #01142b);
+  color: #fff; border-radius: var(--r-lg);
+  padding: 3rem 2.5rem; margin-bottom: 1.6rem;
+  position: relative; overflow: hidden;
+}
+.hero::after {
+  content: ''; position: absolute; right: -60px; top: -60px;
+  width: 300px; height: 300px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(244,130,33,.40), transparent 68%);
+}
+.hero h1 { font-size: 2.5rem; max-width: 17ch; position: relative; z-index: 1; }
+.hero h1 em { font-style: normal; color: var(--orange); }
+.hero p { color: rgba(255,255,255,.8); max-width: 56ch; font-size: 1.02rem; position: relative; z-index: 1; }
+.hero .btn { position: relative; z-index: 1; }
+
+.auth-wrap { min-height: 100vh; display: grid; place-items: center; padding: 2rem 1.2rem; }
+.auth-card { width: 100%; max-width: 420px; }
+
+/* ------------------------------------------------------------ responsive */
+
+@media (max-width: 880px) {
+  .shell { flex-direction: column; }
+  .sidebar {
+    width: 100%; height: auto; position: static;
+    flex-direction: row; align-items: center; gap: 1rem;
+    padding: .8rem 1rem; overflow-x: auto;
+  }
+  .brand-sub, .nav-label { display: none; }
+  .nav { flex-direction: row; gap: .3rem; }
+  .nav a { padding: .5rem .7rem; font-size: .84rem; }
+  .nav a span:not(.ico) { display: none; }
+  .nav-foot { margin: 0; padding: 0; border: none; }
+  .main { padding: 1.2rem 1rem 3rem; }
+  .hero { padding: 2rem 1.4rem; }
+  .hero h1 { font-size: 1.8rem; }
+  .flashes { left: 1rem; right: 1rem; max-width: none; }
+  .booking-side { text-align: left; align-items: flex-start; width: 100%; }
+}
+
+
+/* ------------------------------------------------- staff sign-in and mode */
+/* The admin side gets a dark field and an amber accent. The student portal is
+   light with an indigo accent. Two glances, two different places - so nobody
+   has to read the nav to work out which side they are on. */
+
+.auth-staff {
+  background: linear-gradient(160deg, #0d2c52 0%, #011a38 70%);
+}
+.auth-staff .card { border-top: 4px solid var(--amber); }
+
+.staff-tag {
+  display: inline-block;
+  font-size: .68rem; font-weight: 800;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: #a86a09; background: var(--amber-soft);
+  padding: .22rem .7rem; border-radius: 999px;
+  margin-bottom: .6rem;
+}
+
+/* A thin amber rule along the top of every admin page. */
+.main-admin { border-top: 3px solid var(--amber); }
+.admin-flag {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-size: .68rem; font-weight: 800;
+  letter-spacing: .09em; text-transform: uppercase;
+  color: var(--amber);
+}
+.admin-flag::before {
+  content: ''; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--amber);
+}
+
+
+/* --------------------------------------------------------------- branding */
+
+.logo { display: block; height: auto; }
+.logo-auth { width: 232px; margin: 0 auto .35rem; }
+.logo-bar  { height: 34px; width: auto; }
+
+/* On the navy sidebar the navy mark would disappear, so it sits on a white
+   chip - the brand keeps its own colours rather than being knocked out. */
+.logo-chip {
+  background: #fff;
+  border-radius: 12px;
+  padding: .5rem .6rem;
+  display: block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .18);
+}
+.logo-chip img { height: 26px; width: auto; display: block; }
+
+.wordmark { font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
+.wordmark-sub {
+  font-size: .7rem; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+
+/* Orange is the call to action; navy is everything structural. */
+.btn-brand { background: var(--orange); color: #fff; }
+.btn-brand:hover { background: var(--orange-deep); color: #fff; }
+
+
+/* --------------------------------------------------------------- landing */
+/* Two columns: the pitch on the left, the sign-in form on the right, so a
+   returning student can log in without a second click while a first-time
+   visitor still learns what this is. Collapses to one column on mobile,
+   form first - the people typing on a phone are usually returning. */
+
+.landing {
+  display: grid;
+  grid-template-columns: 1.25fr .85fr;
+  gap: 2.4rem;
+  align-items: start;
+  padding: 1.4rem 0 .6rem;
+}
+.landing-logo { width: 260px; max-width: 70%; height: auto; margin-bottom: 1.4rem; }
+.landing-intro h1 { font-size: 2.5rem; letter-spacing: -.03em; margin-bottom: .7rem; }
+.landing-intro h1 em { font-style: normal; color: var(--orange); }
+.landing-intro .lead { font-size: 1.02rem; max-width: 54ch; color: var(--ink-2); }
+
+.landing-points { display: grid; gap: 1.15rem; margin-top: 1.8rem; }
+.landing-points > div { display: flex; gap: .9rem; align-items: flex-start; }
+.landing-points strong { display: block; font-size: .96rem; margin-bottom: .15rem; }
+.landing-points p { margin: 0; font-size: .88rem; }
+.lp-ico {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: grid; place-items: center; font-size: 1.05rem; flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .landing { grid-template-columns: 1fr; gap: 1.6rem; }
+  .landing-auth { order: -1; }          /* form first on a phone */
+  .landing-intro h1 { font-size: 1.9rem; }
+  .landing-logo { width: 200px; }
+}
+/* ------------------------------------------ sliding IISc line-drawing bg */
+.landing, .auth-wrap { position: relative; }
+.landing::before, .auth-wrap::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url("/static/img/iisc-line.png") left center/auto 78% repeat-x;
+  opacity: .06;
+  animation: iisc-slide 70s linear infinite;
+}
+@keyframes iisc-slide {
+  from { background-position: left center; }
+  to   { background-position: -1536px center; }
+}
+.landing > *, .auth-wrap > * { position: relative; z-index: 1; }

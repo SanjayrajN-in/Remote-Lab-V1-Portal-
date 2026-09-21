@@ -1,0 +1,137 @@
+{% extends "_admin_shell.html" %}
+{% set active = 'devices' %}
+{% block title %}Lab nodes - IKEN Remote Lab admin{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div><div class="eyebrow">Lab</div><h1>Lab nodes</h1>
+    <p class="muted" style="margin:0">Each experiment runs on its own Raspberry Pi. Add one by IP and it reports its own identity.</p></div>
+  <button class="btn btn-teal" data-open="addNode">Add node by IP</button>
+</div>
+
+<div class="card card-flush">
+  <div class="table-wrap table-wide">
+    <table>
+      <thead><tr>
+        <th>Node</th><th>Experiment</th><th>Address</th><th>Board</th><th>Status</th>
+        <th>CPU</th><th>RAM</th><th>Temp</th><th>Power</th><th>Uptime</th><th>Last seen</th><th></th>
+      </tr></thead>
+      <tbody>
+      {% for n in nodes %}
+        {% set h = n.latest %}
+        <tr>
+          <td class="nowrap"><strong>{{ n.name }}</strong><br><span class="tiny muted mono">{{ n.node_id }}</span></td>
+          <td class="wrap">{% if n.experiment %}<a href="{{ url_for('admin.experiments') }}">{{ n.experiment.name }}</a>{% else %}<span class="tiny muted">unassigned</span>{% endif %}</td>
+          <td class="mono tiny">{{ n.ip_address }}:{{ n.port }}</td>
+          <td class="tiny">{{ n.board }}</td>
+          <td><span class="badge {{ 'b-online' if n.is_online else 'b-offline' }}">{{ 'online' if n.is_online else 'offline' }}</span></td>
+          <td>{% if h and h.cpu_percent is not none %}{{ h.cpu_percent | round(0) | int }}%{% else %}—{% endif %}</td>
+          <td>{% if h and h.ram_percent is not none %}{{ h.ram_percent | round(0) | int }}%{% else %}—{% endif %}</td>
+          <td>{% if h and h.temperature_c is not none %}{{ h.temperature_c | round(1) }}°C{% else %}—{% endif %}</td>
+          <td class="tiny nowrap">
+            {% if h and h.battery_status %}
+              {% if h.battery_status == 'AC' %}<span style="color:var(--teal)">⚡ AC</span>
+              {% else %}<span style="color:var(--amber)">▮ {{ h.battery_percent | round(0) | int if h.battery_percent is not none else '?' }}%</span>{% endif %}
+            {% else %}—{% endif %}
+          </td>
+          <td class="tiny">{{ h.uptime_seconds | duration if h and h.uptime_seconds else '—' }}</td>
+          <td class="tiny nowrap">{{ n.last_seen | dt('%d %b %H:%M') if n.last_seen else 'never' }}</td>
+          <td class="right nowrap">
+            <button class="btn btn-ghost btn-sm" data-open="node{{ n.id }}">Edit</button>
+            <a href="{{ url_for('admin.lab_pi_ui_settings', node_id=n.id) }}" class="btn btn-ghost btn-sm">UI settings</a>
+            <form method="post" action="{{ url_for('admin.refresh_device', node_id=n.id) }}" style="display:inline">
+              <button class="btn btn-ghost btn-sm">Ping</button>
+            </form>
+            <form method="post" action="{{ url_for('admin.delete_device', node_id=n.id) }}" style="display:inline"
+                  onsubmit="return confirm('Remove {{ n.name }}?')">
+              <button class="btn btn-coral btn-sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="12" class="empty">
+          <div class="empty-ico">▢</div><h3>No nodes registered</h3>
+          <p>Add a node's IP address, or let it register itself when the lab-pi service starts.</p>
+        </td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-top:1.15rem">
+  <h3>How a node joins</h3>
+  <p>A Pi running <span class="mono">remote_lab_pi</span> posts to
+     <span class="mono">/api/node/register</span> at boot with its ID, IP and experiment
+     slug, then sends telemetry to <span class="mono">/api/node/heartbeat</span> every 30
+     seconds. It goes offline here after 90 seconds of silence. Adding by IP does the same
+     thing from this side — the portal calls <span class="mono">GET /api/info</span> on the
+     node and stores what comes back.</p>
+</div>
+
+<div class="modal" id="addNode" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <form method="post" action="{{ url_for('admin.add_device') }}">
+      <div class="modal-head"><h2 style="margin:0">Add a node</h2><button type="button" class="x-btn" data-close>&times;</button></div>
+      <div class="modal-body">
+        <p>Enter the Pi's address. The portal asks it who it is and which experiment it's wired to.</p>
+        <div class="field"><label for="ip_address">IP address</label>
+          <input type="text" id="ip_address" name="ip_address" placeholder="<bench-host>" required></div>
+        <div class="field"><label for="port">Port</label>
+          <input type="number" id="port" name="port" value="5000">
+          <div class="hint">The lab-pi service listens on 5000 unless you changed it.</div></div>
+        <div class="field"><label for="node_id">Lab Pi ID <span class="muted">(optional)</span></label>
+          <input type="text" id="node_id" name="node_id" placeholder="lab-bench-1">
+          <div class="hint">The node's <span class="mono">LAB_PI_ID</span>. Only needed if the
+            Pi is offline right now — with it, the node is added anyway and turns online
+            by itself once it starts heartbeating.</div></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn btn-teal">Fetch details and add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% for n in nodes %}
+<div class="modal" id="node{{ n.id }}" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <form method="post" action="{{ url_for('admin.edit_device', node_id=n.id) }}">
+      <div class="modal-head"><h2 style="margin:0">{{ n.name }}</h2><button type="button" class="x-btn" data-close>&times;</button></div>
+      <div class="modal-body">
+        <div class="field"><label>Display name</label><input type="text" name="name" value="{{ n.name }}"></div>
+        <div class="field"><label>IP address</label><input type="text" name="ip_address" value="{{ n.ip_address }}"></div>
+        <div class="field"><label>Port</label><input type="number" name="port" value="{{ n.port }}"></div>
+        <div class="field"><label>Location</label><input type="text" name="location" value="{{ n.location or '' }}" placeholder="Bench 3, IKEN Remote Lab lab"></div>
+        <div class="field"><label>Board</label>
+          <select name="board">
+            {% for id, label in board_type_choices %}
+            <option value="{{ id }}" {{ 'selected' if n.board == id }}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <div class="hint">Set from what the node reports at boot; override here if it's wrong. The
+            "Debug" tab on the student's lab page only shows for STM32/Nucleo/Black&nbsp;Pill/Tiva boards.
+            A Pi reboot re-registers and can overwrite this again.</div></div>
+        <div class="field"><label>Experiment</label>
+          <select name="experiment_id">
+            <option value="">— unassigned —</option>
+            {% for e in experiments %}<option value="{{ e.id }}" {{ 'selected' if n.experiment_id == e.id }}>{{ e.name }}</option>{% endfor %}
+          </select></div>
+        <div class="field"><span class="check">
+          <input type="checkbox" id="na{{ n.id }}" name="is_active" {{ 'checked' if n.is_active }}>
+          <label for="na{{ n.id }}">Available for booking</label></span></div>
+        <div class="field"><label>Node token</label>
+          <input type="text" class="mono" value="{{ n.api_token }}" readonly onclick="this.select()">
+          <div class="hint">Put this in the node's <span class="mono">.env</span> as <span class="mono">MASTER_NODE_TOKEN</span>.</div></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/modal.js') }}"></script>{% endblock %}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}IKEN Remote Lab{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='9' fill='%23011a38'/><text x='16' y='23' font-size='18' font-family='sans-serif' font-weight='bold' fill='%23f48221' text-anchor='middle'>i</text></svg>">
+</head>
+<body>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flashes">
+    {% for category, message in messages %}
+      <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+{% block body %}{% endblock %}
+
+<script>
+  document.querySelectorAll('.flash').forEach(function (el) {
+    var delay = el.classList.contains('flash-error') ? 15000 : 5000;
+    var timer = setTimeout(fade, delay);
+    el.addEventListener('click', function () { clearTimeout(timer); fade(); });
+    function fade() {
+      el.style.transition = 'opacity .4s'; el.style.opacity = '0';
+      setTimeout(function () { el.remove(); }, 400);
+    }
+  });
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

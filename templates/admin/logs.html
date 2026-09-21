@@ -1,0 +1,38 @@
+{% extends "_admin_shell.html" %}
+{% set active = 'logs' %}
+{% block title %}Activity log - IKEN Remote Lab admin{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div><div class="eyebrow">Overview</div><h1>Activity log</h1></div>
+  <form method="get" class="row">
+    <select name="level" onchange="this.form.submit()">
+      <option value="">All levels</option>
+      {% for l in ['info', 'warning', 'error'] %}
+        <option value="{{ l }}" {{ 'selected' if level == l }}>{{ l | capitalize }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<div class="card card-flush">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Time</th><th>Level</th><th>Area</th><th>Event</th><th>By</th></tr></thead>
+      <tbody>
+      {% for l in logs %}
+        <tr>
+          <td class="tiny nowrap mono">{{ l.created_at | dt('%d %b %H:%M:%S') }}</td>
+          <td><span class="badge b-{{ l.level }}">{{ l.level }}</span></td>
+          <td class="tiny">{{ l.category }}</td>
+          <td>{{ l.message }}</td>
+          <td class="tiny muted">{{ l.user.email if l.user else 'system' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="empty">Nothing logged yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

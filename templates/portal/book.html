@@ -1,0 +1,88 @@
+{% extends "_shell.html" %}
+{% set active = 'dashboard' %}
+{% block title %}Book {{ exp.name }} - IKEN Remote Lab{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div>
+    <div class="eyebrow">{{ exp.course.code if exp.course }}</div>
+    <h1>Book {{ exp.name }}</h1>
+    <p class="muted" style="margin:0">Sessions run {{ exp.max_duration_min }} minutes, and all times are {{ tz_label }}. You can book up to {{ (max_date - today).days }} days ahead.</p>
+  </div>
+  <a href="{{ url_for('portal.dashboard') }}" class="btn btn-ghost">Back to experiments</a>
+</div>
+
+<div class="card">
+  <form method="get" class="row" style="margin-bottom:1.4rem;align-items:flex-end">
+    <div class="field grow" style="margin:0;max-width:260px">
+      <label for="date">Date</label>
+      <input type="date" id="date" name="date" value="{{ on_date.isoformat() }}"
+             min="{{ today.isoformat() }}" max="{{ max_date.isoformat() }}"
+             onchange="this.form.submit()">
+    </div>
+    <noscript><button class="btn btn-ghost">Show slots</button></noscript>
+  </form>
+
+  <form method="post" id="bookForm">
+    <div class="row-between" style="margin-bottom:.4rem">
+      <label style="margin:0">Time slot on {{ on_date | dt('%A %d %B %Y') if on_date else '' }} <span class="muted" style="font-weight:600">({{ tz_label }})</span></label>
+      <div class="legend">
+        <span><i style="background:var(--teal-soft);border:1.5px solid var(--teal)"></i>Free</span>
+        <span><i style="background:var(--coral-soft)"></i>Taken</span>
+        <span><i style="background:var(--indigo-soft);border:1.5px solid var(--indigo)"></i>Yours</span>
+        <span><i style="background:#f4f5fa"></i>Past</span>
+      </div>
+    </div>
+
+    <div class="slot-grid">
+      {% for s in slots %}
+        <label class="slot">
+          <input type="radio" name="slot" value="{{ s.value }}"
+                 {% if s.state != 'free' %}disabled{% endif %}
+                 {% if s.state == 'free' %}data-free="1"{% endif %}>
+          <span class="slot-btn {% if s.state == 'taken' %}is-taken{% elif s.state == 'past' %}is-past{% elif s.state == 'yours' %}is-yours{% elif s.state == 'blocked' %}is-blocked{% endif %}"
+                {% if s.state == 'taken' %}title="Already booked by another student"
+                {% elif s.state == 'yours' %}title="You already hold this slot"
+                {% elif s.state == 'blocked' %}title="You already hold a slot for this experiment"
+                {% elif s.state == 'past' %}title="This time has passed"{% endif %}>
+            {{ s.label }}
+          </span>
+        </label>
+      {% endfor %}
+    </div>
+
+        <div class="row-between" style="margin-top:1.6rem">
+      <div class="tiny muted" id="chosen">
+        {{ 'Booking is paused until your current slot for this experiment is done.'
+           if held else 'No slot selected yet.' }}
+      </div>
+      <button type="submit" class="btn btn-lg" id="submitBtn" disabled>Confirm booking</button>
+    </div>
+  </form>
+</div>
+
+<p class="tiny muted" style="margin-top:1rem">
+  A confirmation email goes out as soon as you book. The bench opens for you five
+  minutes before your slot begins.
+</p>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var form = document.getElementById('bookForm');
+  var btn = document.getElementById('submitBtn');
+  var note = document.getElementById('chosen');
+  form.addEventListener('change', function (e) {
+    if (e.target.name !== 'slot') return;
+    btn.disabled = false;
+    var label = e.target.nextElementSibling.textContent.trim();
+    note.textContent = 'Selected: ' + label;
+  });
+  form.addEventListener('submit', function () {
+    btn.disabled = true;
+    btn.textContent = 'Booking…';
+  });
+})();
+</script>
+{% endblock %}
