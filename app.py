@@ -103,7 +103,8 @@ def create_app(config_object=Config):
         flask_session.permanent = True
     from services.realtime import init_socketio
     init_socketio(app, app.config.get("NODE_SHARED_SECRET", ""))
-    socketio.init_app(app)
+    socketio.init_app(
+        app, cors_allowed_origins=app.config.get("PORTAL_ALLOWED_ORIGINS") or [])
 
     app.extensions["pi_relay"] = LabPiRelayManager(socketio, app.config["NODE_SHARED_SECRET"])
     app.extensions["audio_relay"] = AudioRelayManager()

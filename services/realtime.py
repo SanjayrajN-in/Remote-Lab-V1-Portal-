@@ -5,7 +5,11 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from models import Session
 from services.lab_pi_relay import LabPiRelayManager
 
-socketio = SocketIO(async_mode="threading", cors_allowed_origins="*")
+# cors_allowed_origins is set from configuration in init_socketio(). It used
+# to be "*" here, which told the server to accept a Socket.IO handshake from
+# any web page - so any site a signed-in student visited could open a relay
+# to their bench.
+socketio = SocketIO(async_mode="threading")
 
 _relay = None
 _sid_session = {}
@@ -20,7 +24,8 @@ BROWSER_COMMANDS = [
 
 def init_socketio(app, master_api_key):
     global _relay
-    socketio.init_app(app)
+    socketio.init_app(
+        app, cors_allowed_origins=app.config.get("PORTAL_ALLOWED_ORIGINS") or [])
     _relay = LabPiRelayManager(socketio, master_api_key)
     app.extensions["lab_pi_relay"] = _relay
     _register_handlers(app)

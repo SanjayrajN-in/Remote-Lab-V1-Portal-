@@ -964,6 +964,16 @@ def main():
         check("the bad one is marked rejected",
               FirmwareUpload.query.filter_by(status="rejected").count() >= 1)
 
+    print("\nSocket.IO cross-origin policy")
+    from app import socketio as _portal_sio
+    from services.realtime import socketio as _relay_sio
+    for label, sio in (("relay server", _relay_sio), ("portal server", _portal_sio)):
+        srv = getattr(sio, "server", None)
+        eio = getattr(srv, "eio", None) if srv else None
+        origins = getattr(eio, "cors_allowed_origins", None)
+        check(f"{label} does not accept every origin",
+              origins not in ("*", ["*"]), f"cors_allowed_origins={origins!r}")
+
     print("\nSocket relay authorisation")
     from app import socketio as _sio
     with mock.patch.object(app.extensions["pi_relay"], "forward"):

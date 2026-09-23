@@ -28,6 +28,12 @@ class Config:
     # Public URL of this master server, used in invitation emails.
     PORTAL_BASE_URL = os.environ.get("PORTAL_BASE_URL", "http://localhost:5000")
 
+    # Origins allowed to open a Socket.IO connection. Defaults to the portal's
+    # own URL; set PORTAL_ALLOWED_ORIGINS (comma-separated) if the page is
+    # served from more than one hostname.
+    PORTAL_ALLOWED_ORIGINS = [o.strip() for o in os.environ.get(
+        "PORTAL_ALLOWED_ORIGINS", PORTAL_BASE_URL).split(",") if o.strip()]
+
     # Shared secret every Lab Pi presents when registering / heart-beating.
     NODE_SHARED_SECRET = os.environ.get("NODE_SHARED_SECRET", "")
     NODE_TIMEOUT = float(os.environ.get("NODE_TIMEOUT", "4"))
