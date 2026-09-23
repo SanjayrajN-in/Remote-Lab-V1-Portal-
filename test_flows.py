@@ -104,6 +104,17 @@ def main():
         check("logout rotates the session token so other sessions die",
               before is not None and after is not None and before != after)
 
+    print("\nIdle session timeout")
+    with app.test_client() as c:
+        login(c, "asha@t.edu", "studentpass1")
+        with c.session_transaction() as sess:
+            sess["last_active"] = (utcnow() - timedelta(minutes=31)).isoformat()
+        r = c.get("/dashboard", follow_redirects=False)
+        check("idle timeout redirects instead of erroring",
+              r.status_code == 302, f"got {r.status_code}")
+        check("idle timeout sends the user to sign-in",
+              "/login" in r.headers.get("Location", ""))
+
     print("\nCourse-scoped visibility")
     with app.test_client() as c:
         login(c, "asha@t.edu", "studentpass1")
