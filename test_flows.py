@@ -92,6 +92,18 @@ def main():
         r = login(c, "asha@t.edu", "studentpass1")
         check("correct password signs in", b"My experiments" in r.data)
 
+    print("\nSession invalidation")
+    with app.test_client() as c:
+        login(c, "asha@t.edu", "studentpass1")
+        with app.app_context():
+            before = User.query.filter_by(email="asha@t.edu").first().session_token
+        c.get("/logout")
+        with app.app_context():
+            after = User.query.filter_by(email="asha@t.edu").first().session_token
+        check("login issues a session token", before is not None)
+        check("logout rotates the session token so other sessions die",
+              before is not None and after is not None and before != after)
+
     print("\nCourse-scoped visibility")
     with app.test_client() as c:
         login(c, "asha@t.edu", "studentpass1")

@@ -114,10 +114,13 @@ def admin_login():
 @bp.route("/logout")
 @login_required
 def logout():
+    # Rotate the token *before* dropping the login. logout_user() makes
+    # current_user anonymous, so doing this afterwards silently no-ops and
+    # other sessions for this account stay valid.
+    user = current_user._get_current_object()
+    user.session_token = secrets.token_hex(32)
+    db.session.commit()
     logout_user()
-    if current_user.is_authenticated:
-        current_user.session_token = secrets.token_hex(32)
-        db.session.commit()
     flask_session.clear()
     from flask import make_response
     resp = make_response(redirect(url_for("portal.home")))
