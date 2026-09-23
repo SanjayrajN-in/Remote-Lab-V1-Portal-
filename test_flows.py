@@ -440,6 +440,43 @@ def main():
         check("the owning student can still flash",
               r.status_code == 200, f"got {r.status_code} {r.data[:120]}")
 
+    print("\nFirmware validation hardening")
+    from models import FirmwareUpload as _FU
+    with app.app_context():
+        _node_board = LabPi.query.get(ids["node"]).board
+
+    with app.test_client() as c:
+        login(c, "asha@t.edu", "studentpass1")
+        with mock.patch("services.nodes.flash") as fl:
+            fl.return_value = (True, "flashed")
+            c.post(f"/session/{key}/firmware",
+                   data={"firmware": (io.BytesIO(b":100000000C9434000C943E000C943E000C943E00A8\n:00000001FF\n"), "blink.hex"),
+                         "board": "tiva"},
+                   content_type="multipart/form-data")
+        with app.app_context():
+            rec = _FU.query.order_by(_FU.id.desc()).first()
+            check("the bench's own board governs, not the uploader's claim",
+                  rec.board == _node_board, f"stored {rec.board}")
+            check("the malware-scan outcome is recorded",
+                  SystemLog.query.filter(
+                      SystemLog.message.contains("scan")).count() >= 1)
+
+    with app.app_context():
+        n = LabPi.query.get(ids["node"])
+        n.board = "nonsense-board"
+        db.session.commit()
+    with app.test_client() as c:
+        login(c, "asha@t.edu", "studentpass1")
+        r = c.post(f"/session/{key}/firmware",
+                   data={"firmware": (io.BytesIO(b":100000000C9434000C943E000C943E000C943E00A8\n:00000001FF\n"), "blink.hex")},
+                   content_type="multipart/form-data")
+        check("an unrecognised board is refused, not given every file type",
+              r.status_code == 422, f"got {r.status_code}")
+    with app.app_context():
+        n = LabPi.query.get(ids["node"])
+        n.board = _node_board
+        db.session.commit()
+
     print("\nNode API")
     with app.test_client() as c:
         r = c.post("/api/node/register", json={"node_id": "bench-2", "name": "Bench 2",

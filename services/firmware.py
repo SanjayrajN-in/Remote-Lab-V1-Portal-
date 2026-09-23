@@ -122,7 +122,15 @@ def validate(filename, data, board="generic"):
             f"'{ext or 'no extension'}' isn't an accepted firmware type. "
             f"Upload a compiled image: {', '.join(sorted(ALLOWED_EXTENSIONS))}.")
 
-    allowed_for_board = BOARD_EXTENSIONS.get(board, ALLOWED_EXTENSIONS)
+    # An unrecognised board used to fall back to the full ALLOWED_EXTENSIONS
+    # set, so naming a board nobody had heard of was a way to opt out of the
+    # per-board restriction entirely. It is now a rejection.
+    if board not in BOARD_EXTENSIONS:
+        raise Rejected(
+            f"'{board}' is not a board this portal knows how to validate "
+            f"firmware for. Check the bench's board setting.", suspicious=True)
+
+    allowed_for_board = BOARD_EXTENSIONS[board]
     if ext not in allowed_for_board:
         raise Rejected(
             f"A {ext} file doesn't match a {board} board. "
@@ -173,8 +181,10 @@ def validate(filename, data, board="generic"):
         if data[:4] != b"UF2\n" and data[:4] != b"\x55\x46\x32\x0a":
             raise Rejected("That .uf2 file is missing its UF2 signature.")
 
-    _clamav_scan(data)          # second layer, only if ClamAV is present
-    return ext
+    # Returns the scan outcome rather than only raising, so the caller can
+    # record whether a scan actually happened. Previously an absent, timed-out
+    # or erroring scanner was indistinguishable from a clean result.
+    return ext, _clamav_scan(data)
 
 
 def _validate_intel_hex(data):
@@ -202,14 +212,18 @@ def _clamav_scan(data):
     structural checks above are the primary defence; this is defence in depth."""
     clamscan = shutil.which("clamscan")
     if not clamscan:
-        return
+        return "not_scanned"
     try:
         proc = subprocess.run(
             [clamscan, "--no-summary", "--infected", "-"],
             input=data, capture_output=True, timeout=30,
         )
     except (subprocess.TimeoutExpired, OSError):
-        return          # a scanner that will not run must not block a lab session
+        # A scanner that will not run still must not block a lab session, but
+        # the caller is told, so 'scanned and clean' and 'never scanned' are
+        # no longer the same entry in the audit trail.
+        return "error"
     if proc.returncode == 1:            # 1 = infected, 0 = clean, 2 = error
         raise Rejected("That file was flagged by the malware scanner and "
                        "cannot be uploaded.", suspicious=True)
+    return "clean" if proc.returncode == 0 else "error"

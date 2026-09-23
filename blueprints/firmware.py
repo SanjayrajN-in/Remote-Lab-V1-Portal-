@@ -70,9 +70,10 @@ def upload(key):
     if not fw or not fw.filename:
         return jsonify({"status": "error", "message": "No file was chosen."}), 400
 
-    board = (request.form.get("board")
-             or (session.node.board if session.node else None)
-             or "generic")
+    # The board comes from the bench record, never from the uploader. Letting
+    # the client send it meant choosing which extension allow-list applied to
+    # your own upload - the restriction was opt-out.
+    board = (session.node.board if session.node else None) or "generic"
 
     # Bounded read. MAX_CONTENT_LENGTH is 32 MB but firmware is capped at 8 MB,
     # so an unbounded read() buffered four times the allowed size in memory
@@ -90,7 +91,7 @@ def upload(key):
 
     # 1. Validate. A rejection is recorded, so repeated bad uploads are visible.
     try:
-        firmware.validate(fw.filename, data, board)
+        _ext, scan_result = firmware.validate(fw.filename, data, board)
     except firmware.Rejected as e:
         record.status = "rejected"
         record.reason = str(e)
@@ -123,8 +124,11 @@ def upload(key):
     record.status = "forwarded" if ok else "failed"
     record.reason = None if ok else message
     record.forwarded_at = utcnow() if ok else None
+    # scan_result is recorded explicitly so the audit trail distinguishes
+    # 'scanned and clean' from 'never scanned' - previously identical.
     SystemLog.write(
-        f"Firmware {safe} from {session.user.email} "
+        f"Firmware {safe} from {session.user.email} (board {board}, "
+        f"scan: {scan_result}) "
         + ("forwarded to " + (session.node.node_id if session.node else "?")
            if ok else f"failed to forward: {message}"),
         level="info" if ok else "error",
