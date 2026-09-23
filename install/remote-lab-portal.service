@@ -6,6 +6,8 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=__USER__
+Group=__USER__
+UMask=0077
 WorkingDirectory=__APP_DIR__
 EnvironmentFile=__APP_DIR__/.env
 # Single worker, many threads: the lab page's SocketIO relay
@@ -24,12 +26,42 @@ ExecStart=__APP_DIR__/venv/bin/gunicorn \
 Restart=always
 RestartSec=5
 
-# The app only ever writes inside its own directory.
+# --- containment -----------------------------------------------------------
+# The service account owns only the three directories it writes to; the source
+# tree is root-owned, so a file-write primitive in the web tier cannot turn
+# into code execution on the next restart.
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectSystem=full
+PrivateDevices=true
+ProtectSystem=strict
+# read-only rather than true because the application currently lives under
+# /home. Move APP_DIR to /opt and this can become ProtectHome=true.
 ProtectHome=read-only
-ReadWritePaths=__APP_DIR__
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+# Only these three are writable. Everything else, including the source and
+# the virtualenv, is read-only to the service.
+ReadWritePaths=__APP_DIR__/data __APP_DIR__/uploads __APP_DIR__/static/sop
+
+# Bounds, so the resource-exhaustion paths cannot take the host with them.
+MemoryMax=1G
+TasksMax=256
 
 [Install]
 WantedBy=multi-user.target

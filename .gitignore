@@ -37,3 +37,6 @@ cookies*.txt
 *.tgz
 *.zip
 *.bundle
+
+# Written by install.sh; delete once provisioned.
+.node-secret

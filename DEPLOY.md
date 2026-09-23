@@ -37,6 +37,37 @@ passwd                          # pick something long
 > Node traffic then goes over TLS as well, so the shared secret stops
 > crossing the laboratory network in clear text.
 
+> **Upgrading an existing install: dedicated service account.**
+>
+> The service used to run as whoever ran the installer with `sudo` - so a
+> compromise of the web process inherited that person's shell, their SSH keys
+> and their sudo rights, and could write to the application's own source and
+> wait for a restart. It now runs as an unprivileged `remotelab` account that
+> owns only the three directories it writes to.
+>
+> ```bash
+> sudo useradd --system --no-create-home --shell /usr/sbin/nologin remotelab
+>
+> cd /path/to/remote_lab_portal
+> sudo chown -R root:root .
+> sudo chown -R remotelab:remotelab data uploads static/sop
+> sudo chown root:root .env && sudo chmod 600 .env   # systemd reads it as root
+>
+> sudo sed -e "s|__APP_DIR__|$PWD|g" -e "s|__USER__|remotelab|g" \
+>          -e "s|__PORT__|5001|g" install/remote-lab-portal.service \
+>   | sudo tee /etc/systemd/system/remote-lab-portal.service >/dev/null
+> sudo systemctl daemon-reload && sudo systemctl restart remote-lab-portal
+> systemctl status remote-lab-portal
+> systemd-analyze security remote-lab-portal
+> ```
+>
+> If it fails to start, drop `MemoryDenyWriteExecute=true` first - it is the
+> directive most likely to upset a compiled extension - then
+> `SystemCallFilter=@system-service`. Re-add them one at a time.
+>
+> `ProtectHome=read-only` rather than `true` because the application currently
+> lives under `/home`. Move it to `/opt` and that can be tightened.
+
 Better still, switch to key-based login and turn password authentication off:
 
 ```bash
