@@ -16,3 +16,24 @@ cookies*.txt
 *.secbak
 *.vaptbak
 *.save
+
+# --- added after the .env.bak disclosure incident, 2026-09-23 ---
+# ".env" alone did NOT match ".env.bak.<timestamp>", which is how a copy of
+# the production environment file reached a public repository.
+.env.*
+!.env.example
+
+# Editor, patch and migration backups - never commit these.
+*.bak
+*.bak.*
+*.orig
+*.rej
+*.OLD
+*.old
+*~
+
+# Archives and git bundles.
+*.tar.gz
+*.tgz
+*.zip
+*.bundle
