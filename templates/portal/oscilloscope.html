@@ -4,9 +4,9 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
 <meta charset="utf-8" />
 <title>High-Speed Oscilloscope - Embedded Virtual Lab</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<link href="{{ url_for('static', filename='vendor/google-fonts.css') }}" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome-6.0.0.min.css') }}">
+<script src="{{ url_for('static', filename='vendor/socket.io-4.7.5.min.js') }}"></script>
 <style>
 html, body { height: 100%; margin: 0; font-family: 'Inter', sans-serif; background: #0d1117; color: #e0e0e0; overflow: hidden; }
 #CRO_CONTAINER { display: flex; flex-direction: column; height: 100vh; background: #0d1117; }

@@ -213,13 +213,17 @@ def create_app(config_object=Config):
         if request.is_secure or request.headers.get("X-Forwarded-Proto") == "https":
             resp.headers.setdefault(
                 "Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        # Every third-party script, stylesheet and font is now served from
+        # static/vendor/, so no external origin is allowed here any more.
+        # That also means this policy is what actually stops a future CDN
+        # reference from silently working - see static/vendor/SOURCES.md.
+        # 'unsafe-inline'/'unsafe-eval' remain because the lab pages carry
+        # large inline scripts; removing them is separate work.
         resp.headers.setdefault("Content-Security-Policy",
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net "
-            "https://cdn.socket.io https://cdnjs.cloudflare.com; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com "
-            "https://cdnjs.cloudflare.com; "
-            "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "font-src 'self' data:; "
             "img-src 'self' data: blob:; "
             "connect-src 'self' ws: wss:; "
             "frame-ancestors 'self'")

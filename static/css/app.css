@@ -3,7 +3,8 @@
    flat saturated accents (indigo / teal / coral / amber), pill controls, and
    ring gauges instead of bar charts for at-a-glance state. */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+/* Served locally - see static/vendor/SOURCES.md. */
+@import url('../vendor/app-fonts.css');
 
 :root {
   /* Palette taken from the IKEN mark: navy #011a38, orange #f48221.

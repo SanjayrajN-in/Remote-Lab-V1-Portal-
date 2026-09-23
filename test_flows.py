@@ -229,6 +229,46 @@ def main():
           _appc.config.get("WTF_CSRF_TIME_LIMIT") is None,
           f"got {_appc.config.get('WTF_CSRF_TIME_LIMIT')}")
 
+    print("\nThird-party assets are served locally")
+    # F-19. Scripts, stylesheets and fonts were pulled from four public CDNs
+    # with no integrity checking, and chart.js was requested with no version
+    # at all. A closed lab network - what the assessment recommends - could
+    # not have loaded any of them either.
+    _ext = []
+    for _tpl in sorted(Path("templates").rglob("*.html")):
+        for _host in ("cdn.jsdelivr.net", "cdn.socket.io", "cdnjs.cloudflare.com",
+                      "fonts.googleapis.com", "fonts.gstatic.com"):
+            if _host in _tpl.read_text():
+                _ext.append(f"{_tpl}:{_host}")
+    check("no template loads code or fonts from an outside service",
+          not _ext, ", ".join(_ext[:4]))
+    for _css in ("static/css/app.css",):
+        check(f"{_css} imports no remote font service",
+              "googleapis" not in Path(_css).read_text())
+    for _vcss in sorted(Path("static/vendor").glob("*.css")):
+        check(f"vendor/{_vcss.name} pulls no font from a remote host",
+              "gstatic" not in _vcss.read_text()
+              and "cdnjs" not in _vcss.read_text())
+    check("the vendored assets carry a provenance note",
+          Path("static/vendor/SOURCES.md").exists())
+
+    # Every vendored URL a page emits must actually resolve - a typo in a
+    # url_for filename silently ships a 404 and an unstyled, scriptless page.
+    _refs = set()
+    for _tpl in sorted(Path("templates").rglob("*.html")):
+        for _m in re.finditer(r"filename='vendor/([^']+)'", _tpl.read_text()):
+            _refs.add(_m.group(1))
+    check("templates reference at least the expected vendored assets",
+          len(_refs) >= 7, f"found {len(_refs)}")
+    for _ref in sorted(_refs):
+        check(f"vendor/{_ref} exists on disk",
+              (Path("static/vendor") / _ref).is_file())
+    with app.test_client() as c:
+        for _ref in sorted(_refs):
+            _r = c.get(f"/static/vendor/{_ref}")
+            check(f"vendor/{_ref} is served", _r.status_code == 200,
+                  f"got {_r.status_code}")
+
     print("\nSeeded accounts have no shipped password")
     _seed_src = Path("seed.py").read_text()
     # F-28. The demo students all shared one hardcoded password that was also
