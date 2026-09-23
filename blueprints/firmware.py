@@ -124,27 +124,3 @@ def upload(key):
                     "message": f"{safe} accepted and sent to the bench for flashing.",
                     "upload_id": record.id,
                     "debug_symbols": debug_capable})
-
-@bp.get("/session/<key>/camera-stream")
-def camera_stream(key):
-    import requests
-    from flask import Response
-    session = _live_session(key)
-    if not session or not session.node:
-        return jsonify({"status": "error", "message": "No live session."}), 403
-    base = session.node.base_url
-    host = base.rsplit(":", 1)[0]
-    try:
-        upstream = requests.get(f"{host}:8080/?action=stream", stream=True, timeout=10)
-    except Exception as e:
-        return jsonify({"status": "error", "message": f"Camera unavailable: {e}"}), 502
-
-    def relay():
-        try:
-            for chunk in upstream.iter_content(chunk_size=4096):
-                if chunk:
-                    yield chunk
-        finally:
-            upstream.close()
-    return Response(relay(), content_type=upstream.headers.get(
-        "Content-Type", "multipart/x-mixed-replace"))

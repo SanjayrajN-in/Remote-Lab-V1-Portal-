@@ -115,6 +115,17 @@ def main():
         check("idle timeout sends the user to sign-in",
               "/login" in r.headers.get("Location", ""))
 
+    print("\nDuplicate camera proxy")
+    rules = {str(r) for r in app.url_map.iter_rules()}
+    check("unauthenticated /session/<key>/camera-stream is gone",
+          "/session/<key>/camera-stream" not in rules)
+    check("the login-guarded camera route still exists",
+          "/lab/<session_key>/camera-stream" in rules)
+    with app.test_client() as c:
+        r = c.get("/session/ABC1234567/camera-stream", follow_redirects=False)
+        check("old camera URL does not serve a stream", r.status_code == 404,
+              f"got {r.status_code}")
+
     print("\nCourse-scoped visibility")
     with app.test_client() as c:
         login(c, "asha@t.edu", "studentpass1")
