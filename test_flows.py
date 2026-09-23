@@ -1126,6 +1126,27 @@ def main():
         check("lab page hosts the firmware upload, routed through the portal's scan endpoint",
               b"flashBtn" in r.data and b"/session/" in r.data and b"/firmware" in r.data)
 
+        # F-11. The debugger panel builds HTML out of register names,
+        # disassembly, variable names and watch expressions that arrive from
+        # the bench. A compromised or spoofed node could put markup there and
+        # have it run in the student's browser, inside their session. These
+        # assert on the page as served, not on the template on disk.
+        print("\nDebugger output escaping")
+        check("the lab page ships an escaper for bench-supplied text",
+              b"function esc(" in r.data)
+        raw = {
+            b"${name}</td><td>${value}": "register name/value",
+            b"<td>${l.address}</td>": "disassembly address",
+            b"<td>${l.inst}</td>": "disassembly instruction",
+            b'debug-kv-name">${v.name}': "variable name",
+            b'debug-kv-name">${w.expr}': "watch expression",
+            b'data-remove-watch="${name}"': "watch remove button",
+            b"<li>#${id} @ ${addr}": "breakpoint line",
+        }
+        for pattern, what in raw.items():
+            check(f"the {what} is not built into HTML unescaped",
+                  pattern not in r.data, pattern.decode())
+
     with app.app_context():
         app.config["NATIVE_LAB_UI"] = False
     with app.test_client() as c:

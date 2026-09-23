@@ -219,6 +219,16 @@ const CSRF_TOKEN = (document.querySelector('meta[name="csrf-token"]') || {}).con
 function csrfHeaders(extra) {
   return Object.assign({'X-CSRFToken': CSRF_TOKEN}, extra || {});
 }
+
+// Escape anything that came off the wire before it is built into HTML.
+// The debugger panel renders register names, disassembly, variable names and
+// values that originate on the bench - not in this page - so they are
+// untrusted text, not markup.
+function esc(v) {
+  return String(v === null || v === undefined ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 </script>
 </head>
 <body>
@@ -982,7 +992,7 @@ let currentUiConfig = uiConfigFromServer; // kept in sync by applyUiConfig() on 
   function renderRegisters(values){
     if (!registersTableBody) return;
     registersTableBody.innerHTML = Object.entries(values || {})
-      .map(([name, value]) => `<tr><td class="reg-name">${name}</td><td>${value}</td></tr>`)
+      .map(([name, value]) => `<tr><td class="reg-name">${esc(name)}</td><td>${esc(value)}</td></tr>`)
       .join('');
   }
 
@@ -999,7 +1009,7 @@ let currentUiConfig = uiConfigFromServer; // kept in sync by applyUiConfig() on 
     disasmTableBody.innerHTML = (lines || [])
       .map(l => {
         const isPc = currentPc && l.address === currentPc;
-        return `<tr class="${isPc ? 'pc-row' : ''}"><td>${l.address}</td><td>${l['func-name'] || ''}+${l.offset || 0}</td><td>${l.inst}</td></tr>`;
+        return `<tr class="${isPc ? 'pc-row' : ''}"><td>${esc(l.address)}</td><td>${esc(l['func-name'] || '')}+${esc(l.offset || 0)}</td><td>${esc(l.inst)}</td></tr>`;
       })
       .join('');
   }
@@ -1030,7 +1040,7 @@ let currentUiConfig = uiConfigFromServer; // kept in sync by applyUiConfig() on 
   function renderVariables(variables){
     if (!variablesList) return;
     variablesList.innerHTML = (variables || [])
-      .map(v => `<div class="debug-kv-row"><span class="debug-kv-name">${v.name}${v.type ? ' <span style="opacity:.6">(' + v.type + ')</span>' : ''}</span><span class="debug-kv-value">${v.value ?? ''}</span></div>`)
+      .map(v => `<div class="debug-kv-row"><span class="debug-kv-name">${esc(v.name)}${v.type ? ' <span style="opacity:.6">(' + esc(v.type) + ')</span>' : ''}</span><span class="debug-kv-value">${esc(v.value ?? '')}</span></div>`)
       .join('');
   }
 
@@ -1066,7 +1076,7 @@ let currentUiConfig = uiConfigFromServer; // kept in sync by applyUiConfig() on 
   function renderWatches(){
     if (!watchList) return;
     watchList.innerHTML = [...watches.entries()]
-      .map(([name, w]) => `<div class="debug-kv-row"><span class="debug-kv-name">${w.expr}${w.type ? ' <span style="opacity:.6">(' + w.type + ')</span>' : ''}</span><span class="debug-kv-value">${w.value ?? ''} <button data-remove-watch="${name}" title="Remove"><i class="fas fa-xmark"></i></button></span></div>`)
+      .map(([name, w]) => `<div class="debug-kv-row"><span class="debug-kv-name">${esc(w.expr)}${w.type ? ' <span style="opacity:.6">(' + esc(w.type) + ')</span>' : ''}</span><span class="debug-kv-value">${esc(w.value ?? '')} <button data-remove-watch="${esc(name)}" title="Remove"><i class="fas fa-xmark"></i></button></span></div>`)
       .join('');
     watchList.querySelectorAll('[data-remove-watch]').forEach(btn => {
       btn.addEventListener('click', () => socket.emit('debug_command', { cmd: 'remove_watch', name: btn.dataset.removeWatch }));
@@ -1091,7 +1101,7 @@ let currentUiConfig = uiConfigFromServer; // kept in sync by applyUiConfig() on 
   function renderBreakpoints(){
     if (!bpList) return;
     bpList.innerHTML = [...breakpoints.entries()]
-      .map(([id, addr]) => `<li>#${id} @ ${addr} <button data-remove-bp="${id}" title="Remove"><i class="fas fa-xmark"></i></button></li>`)
+      .map(([id, addr]) => `<li>#${esc(id)} @ ${esc(addr)} <button data-remove-bp="${esc(id)}" title="Remove"><i class="fas fa-xmark"></i></button></li>`)
       .join('');
     bpList.querySelectorAll('[data-remove-bp]').forEach(btn => {
       btn.addEventListener('click', () => socket.emit('debug_command', { cmd: 'remove_breakpoint', id: parseInt(btn.dataset.removeBp, 10) }));
