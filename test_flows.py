@@ -658,13 +658,76 @@ def main():
         check("with compat ON and a valid secret, the legacy path still works",
               r.status_code == 200, f"got {r.status_code}")
 
+    print("\nAdmin sign-in lockout and response uniformity")
+    with app.app_context():
+        for em, active in (("locktest@t.edu", True), ("disabled@t.edu", False)):
+            if not User.query.filter_by(email=em).first():
+                u = User(full_name="Probe", email=em)
+                u.set_password("probepass1")
+                u.is_active_flag = active
+                db.session.add(u)
+        db.session.commit()
+
+    with app.test_client() as c:
+        for _ in range(4):
+            c.post("/admin/login",
+                   data={"email": "locktest@t.edu", "password": "wrong"})
+        with app.app_context():
+            u = User.query.filter_by(email="locktest@t.edu").first()
+            check("failures at the staff door count towards lockout",
+                  u.failed_logins == 4, f"failed_logins={u.failed_logins}")
+            check("four failures is not yet a lock", not u.is_locked)
+        c.post("/admin/login",
+               data={"email": "locktest@t.edu", "password": "wrong"})
+        with app.app_context():
+            u = User.query.filter_by(email="locktest@t.edu").first()
+            check("the fifth failure locks the account", u.is_locked)
+        r = c.post("/admin/login",
+                   data={"email": "locktest@t.edu", "password": "probepass1"})
+        check("a locked account is refused even with the right password",
+              r.status_code == 401, f"got {r.status_code}")
+
+    # Every failure mode must be indistinguishable.
+    shapes = set()
+    with app.test_client() as c:
+        for em, pw in (("nobody@t.edu", "whatever1"),
+                       ("asha@t.edu", "wrongpass"),
+                       ("disabled@t.edu", "probepass1"),
+                       ("locktest@t.edu", "probepass1")):
+            r = c.post("/admin/login", data={"email": em, "password": pw})
+            shapes.add((r.status_code, b"match an account" in r.data))
+    check("unknown, wrong, disabled and locked are indistinguishable",
+          len(shapes) == 1, f"distinct shapes: {shapes}")
+
+    with app.test_client() as c:
+        r = c.post("/admin/login",
+                   data={"email": "asha@t.edu", "password": "studentpass1"})
+        check("a student with valid credentials is signed in, not told they are not admin",
+              r.status_code == 302, f"got {r.status_code}")
+        check("and is sent to the student dashboard",
+              "/admin" not in r.headers.get("Location", ""),
+              r.headers.get("Location", ""))
+
+    with app.app_context():
+        u = User.query.filter_by(email="admin@t.edu").first()
+        u.failed_logins = 3
+        db.session.commit()
+    with app.test_client() as c:
+        c.post("/admin/login", data={"email": "admin@t.edu", "password": "adminpass1"})
+        with app.app_context():
+            u = User.query.filter_by(email="admin@t.edu").first()
+            check("a successful staff sign-in resets the failure counter",
+                  u.failed_logins == 0, f"failed_logins={u.failed_logins}")
+
     print("\nAdmin sign-in is separate and role-checked")
     with app.test_client() as c:
         r = c.get("/admin/login")
         check("staff sign-in page renders", b"Administrator sign-in" in r.data)
         r = c.post("/admin/login", data={"email": "asha@t.edu", "password": "studentpass1"})
-        check("a student is refused at the staff door", r.status_code == 403)
-        check("refusal explains where to go instead", b"student sign-in" in r.data)
+        check("a student at the staff door is signed in, not refused",
+              r.status_code == 302)
+        check("and lands on the student side, not the admin panel",
+              "/admin" not in r.headers.get("Location", ""))
         r = c.post("/admin/login", data={"email": "admin@t.edu", "password": "adminpass1"})
         check("admin signs in and lands on the panel",
               r.status_code == 302 and "/admin" in r.headers["Location"])

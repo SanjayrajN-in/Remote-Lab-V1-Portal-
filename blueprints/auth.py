@@ -1,13 +1,71 @@
 """Sign-in, sign-out, first-login password change, password reset."""
-from flask import (Blueprint, flash, redirect, render_template, request,
-                   session as flask_session, url_for)
+from flask import (Blueprint, current_app, flash, redirect, render_template,
+                   request, session as flask_session, url_for)
 from flask_login import current_user, login_required, login_user, logout_user
 
 from models import PasswordResetToken, SystemLog, User, db, utcnow
 from services import mailer
+from werkzeug.security import check_password_hash, generate_password_hash
 import secrets
 
 bp = Blueprint("auth", __name__)
+
+# One message for every failure mode. /admin/login used to answer 401 for a
+# wrong password, 403 for a deactivated account and a different 403 for a
+# valid non-admin - so it confirmed working credentials for any account in
+# the system, and applied no lockout while doing it.
+GENERIC_SIGNIN_ERROR = "That email and password don't match an account."
+
+# Compared against when no user matches, so that a missing account costs
+# roughly the same time as a present one.
+_DUMMY_HASH = generate_password_hash("not-a-real-password")
+
+
+def _authenticate(email, password):
+    """The single authentication path, shared by both sign-in doors.
+
+    Returns (user, error_message). Lockout, failure counting and the success
+    handler live here so the two routes cannot drift apart again.
+    """
+    user = User.query.filter_by(email=email).first()
+    if user is None:
+        check_password_hash(_DUMMY_HASH, password)
+        return None, GENERIC_SIGNIN_ERROR
+
+    if user.is_locked:
+        check_password_hash(_DUMMY_HASH, password)
+        SystemLog.write(f"Sign-in attempt on locked account {user.email}",
+                        level="warning", category="auth", user_id=user.id)
+        db.session.commit()
+        return None, GENERIC_SIGNIN_ERROR
+
+    if not user.check_password(password):
+        user.register_failed_login(
+            max_attempts=current_app.config["LOGIN_MAX_ATTEMPTS"],
+            lock_minutes=current_app.config["LOGIN_LOCK_MINUTES"])
+        level = "warning" if user.is_locked else "info"
+        SystemLog.write(
+            f"Failed sign-in for {user.email}"
+            + (" - account now locked" if user.is_locked else ""),
+            level=level, category="auth", user_id=user.id)
+        db.session.commit()
+        return None, GENERIC_SIGNIN_ERROR
+
+    if not user.is_active:
+        return None, GENERIC_SIGNIN_ERROR
+
+    return user, None
+
+
+def _establish_session(user, remember, where):
+    """Common post-authentication bookkeeping for both doors."""
+    login_user(user, remember=remember)
+    user.register_successful_login()
+    user.session_token = secrets.token_hex(32)
+    flask_session["stok"] = user.session_token
+    SystemLog.write(f"{user.email} signed in{where}", category="auth", user_id=user.id)
+    db.session.commit()
+
 
 
 @bp.route("/login", methods=["GET", "POST"])
@@ -22,40 +80,17 @@ def login():
         # return to the landing page rather than bounce the person to a
         # different-looking page they did not ask for.
         from_home = request.form.get("from") == "home"
-        user = User.query.filter_by(email=email).first()
-
         def _fail(message, code):
             flash(message, "error")
             if from_home:
                 return render_template("home.html", email=email), code
             return render_template("login.html", email=email), code
 
-        if user and user.is_locked:
-            return _fail("Too many failed attempts. This account is locked for "
-                         "15 minutes. Try again or contact the lab admin.", 403)
-        if not user or not user.check_password(password):
-            if user:
-                user.register_failed_login(max_attempts=5, lock_minutes=15)
-                db.session.commit()
-            return _fail("That email and password don't match an account.", 401)
-        if not user.is_active:
-            return _fail("This account has been deactivated. "
-                         "Contact the lab administrator.", 403)
-#        if not user or not user.check_password(password):
-#            return _fail("That email and password don't match an account.", 401)
-#        if not user.is_active:
-#            return _fail("This account has been deactivated. "
-#                         "Contact the lab administrator.", 403)
+        user, err = _authenticate(email, password)
+        if err:
+            return _fail(err, 401)
 
-#        login_user(user, remember=bool(request.form.get("remember")))
-#       user.last_login = utcnow()
-
-        login_user(user, remember=bool(request.form.get("remember")))
-        user.register_successful_login()
-        user.session_token = secrets.token_hex(32)
-        flask_session["stok"] = user.session_token
-        SystemLog.write(f"{user.email} signed in", category="auth", user_id=user.id)
-        db.session.commit()
+        _establish_session(user, bool(request.form.get("remember")), "")
 
         if user.must_change_password:
             return redirect(url_for("auth.change_password"))
@@ -72,11 +107,13 @@ def login():
 def admin_login():
     """A separate door for staff.
 
-    Functionally this authenticates the same way /login does - the difference
-    is that it states plainly which side of the system you are entering, and
-    refuses a student account instead of silently dropping them somewhere they
-    have no business being. Anyone can still sign in at /login; this exists so
-    administrators never wonder which portal they landed on.
+    Functionally this authenticates the same way /login does - it shares
+    _authenticate() with it - and exists so administrators know which side of
+    the system they are entering. It no longer *refuses* a valid student
+    account: telling an attacker "those credentials work, but that is not an
+    administrator" confirmed working credentials for any account in the
+    system. A student who signs in here is simply redirected to their own
+    dashboard, after the session exists.
     """
     if current_user.is_authenticated and current_user.is_admin:
         return redirect(url_for("admin.dashboard"))
@@ -84,29 +121,21 @@ def admin_login():
     if request.method == "POST":
         email = (request.form.get("email") or "").strip().lower()
         password = request.form.get("password") or ""
-        user = User.query.filter_by(email=email).first()
-
-        if not user or not user.check_password(password):
-            flash("That email and password don't match an account.", "error")
+        user, err = _authenticate(email, password)
+        if err:
+            flash(err, "error")
             return render_template("admin_login.html", email=email), 401
-        if not user.is_active:
-            flash("This account has been deactivated.", "error")
-            return render_template("admin_login.html", email=email), 403
-        if not user.is_admin:
-            flash("That account isn't an administrator. Use the student sign-in.", "error")
-            return render_template("admin_login.html", email=email), 403
 
-        login_user(user, remember=bool(request.form.get("remember")))
-        user.last_login = utcnow()
-        user.session_token = secrets.token_hex(32)
-        flask_session["stok"] = user.session_token
-        SystemLog.write(f"{user.email} signed in to the admin panel",
-                        category="auth", user_id=user.id)
-        db.session.commit()
+        _establish_session(user, bool(request.form.get("remember")),
+                           " to the admin panel")
 
         if user.must_change_password:
             return redirect(url_for("auth.change_password"))
-        return redirect(url_for("admin.dashboard"))
+        # Role is decided once the session exists, and acted on by redirecting.
+        # Refusing a valid non-admin here told an attacker they had found
+        # working credentials, which is the oracle half of F-06.
+        return redirect(url_for("admin.dashboard") if user.is_admin
+                        else url_for("portal.dashboard"))
 
     return render_template("admin_login.html", email="")
 
