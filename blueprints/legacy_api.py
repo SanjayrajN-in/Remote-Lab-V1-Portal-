@@ -30,6 +30,7 @@ from flask import Blueprint, current_app, jsonify, request
 
 from models import (Experiment, LabPi, LabPiHeartbeat, Session, SystemLog, db,
                     utcnow)
+from services.netguard import safe_address
 
 log = logging.getLogger(__name__)
 bp = Blueprint("legacy_api", __name__, url_prefix="/api/lab-pi")
@@ -86,7 +87,9 @@ def _identify(data):
         node = LabPi(
             node_id=node_id,
             name=str(_pick(data, "name", "lab_pi_name", default=node_id)),
-            ip_address=str(_pick(data, "ip", "ip_address", default=request.remote_addr)),
+            ip_address=safe_address(_pick(data, "ip", "ip_address"),
+                                    fallback=request.remote_addr,
+                                    context=f"new legacy node {node_id}"),
             port=int(_number(_pick(data, "port", default=5000)) or 5000),
             board=str(_pick(data, "board", "board_type", default="arduino")),
         )
@@ -119,7 +122,10 @@ def register():
 
     _log_first_payload(node.node_id, data)
 
-    node.ip_address = str(_pick(data, "ip", "ip_address", default=request.remote_addr))
+    node.ip_address = safe_address(
+        _pick(data, "ip", "ip_address"),
+        fallback=node.ip_address or request.remote_addr,
+        context=f"node {node.node_id} register")
     node.name = str(_pick(data, "name", default=node.name))
     node.board = str(_pick(data, "board", "board_type", default=node.board))
     node.last_seen = utcnow()
@@ -160,7 +166,10 @@ def heartbeat():
     _log_first_payload(node.node_id, data)
 
     reported_ip = _pick(data, "ip", "ip_address")
-    node.ip_address = str(reported_ip) if reported_ip else (node.ip_address or request.remote_addr)
+    node.ip_address = safe_address(
+        reported_ip,
+        fallback=node.ip_address or request.remote_addr,
+        context=f"node {node.node_id} heartbeat")
     node.last_seen = utcnow()
 
     battery = _number(_pick(data, "battery_soc", "battery_percent", "battery",

@@ -607,7 +607,7 @@ def main():
         r = c.post("/api/lab-pi/heartbeat",
                    headers={**hdr, "X-Lab-Pi-Id": "lab-real-1"},
                    json={"lab_pi_id": "lab-real-1", "name": "Lab Pi amar",
-                         "ip_address": "<bench-1>", "mac_address": "b8:27:eb:01",
+                         "ip_address": "10.0.0.111", "mac_address": "b8:27:eb:01",
                          "status": "ONLINE", "session_active": False,
                          "current_session_key": None,
                          "cpu_usage": 18.4, "ram_usage": 37.2, "temperature": 51.6,
@@ -617,7 +617,7 @@ def main():
         with app.app_context():
             n = LabPi.query.filter_by(node_id="lab-real-1").first()
             check("real node registers itself", n is not None)
-            check("its IP comes from ip_address", n.ip_address == "<bench-1>")
+            check("its IP comes from ip_address", n.ip_address == "10.0.0.111")
             check("cpu_usage is stored", n.latest.cpu_percent == 18.4)
             check("battery_soc is stored", n.latest.battery_percent == 96)
             check("AC_CONNECTED maps to AC", n.latest.battery_status == "AC")
@@ -657,6 +657,43 @@ def main():
                    json={"node_id": "x", "cpu": 1})
         check("with compat ON and a valid secret, the legacy path still works",
               r.status_code == 200, f"got {r.status_code}")
+
+    print("\nNode address validation")
+    with app.test_client() as c:
+        with app.app_context():
+            before = LabPi.query.filter_by(node_id="bench-1").first().ip_address
+        for bad in ("169.254.169.254", "8.8.8.8", "not-an-ip"):
+            c.post("/api/lab-pi/register", headers=hdr,
+                   json={"lab_pi_id": "bench-1", "ip": bad})
+            with app.app_context():
+                n = LabPi.query.filter_by(node_id="bench-1").first()
+                check(f"{bad} is not accepted as a node address",
+                      n.ip_address != bad, f"ip_address={n.ip_address}")
+        c.post("/api/lab-pi/register", headers=hdr,
+               json={"lab_pi_id": "bench-1", "ip": "10.0.0.42"})
+        with app.app_context():
+            n = LabPi.query.filter_by(node_id="bench-1").first()
+            check("an address inside the lab range is accepted",
+                  n.ip_address == "10.0.0.42", f"ip_address={n.ip_address}")
+        with app.app_context():
+            LabPi.query.filter_by(node_id="bench-1").first().ip_address = before
+            db.session.commit()
+
+    with app.app_context():
+        from services.netguard import UnsafeNodeAddress, validate_address
+        for bad in ("127.0.0.1", "::1", "169.254.169.254", "8.8.8.8",
+                    "0.0.0.0", "224.0.0.1", "not-an-ip", ""):
+            try:
+                validate_address(bad)
+                rejected = False
+            except UnsafeNodeAddress:
+                rejected = True
+            check(f"validate_address rejects {bad!r}", rejected)
+        check("validate_address accepts a lab address",
+              validate_address("10.0.0.7") == "10.0.0.7")
+
+    check("outbound node probes do not follow redirects",
+          "allow_redirects=False" in open("services/nodes.py").read())
 
     print("\nAdmin sign-in lockout and response uniformity")
     with app.app_context():

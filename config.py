@@ -32,6 +32,17 @@ class Config:
     NODE_SHARED_SECRET = os.environ.get("NODE_SHARED_SECRET", "")
     NODE_TIMEOUT = float(os.environ.get("NODE_TIMEOUT", "4"))
 
+    # Ranges the portal may make outbound node requests to, and the ports a
+    # bench actually serves. LabPi.ip_address is written from request input
+    # and drives every master-to-node URL, so it is constrained here rather
+    # than trusted. Defaults to the RFC1918 ranges: narrow these to your
+    # actual bench subnet in .env for a tighter allow-list.
+    LAB_NODE_CIDRS = [c.strip() for c in os.environ.get(
+        "LAB_NODE_CIDRS", "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16").split(",")
+        if c.strip()]
+    NODE_ALLOWED_PORTS = {int(p) for p in os.environ.get(
+        "NODE_ALLOWED_PORTS", "5000,8080,9000,10000").split(",") if p.strip()}
+
     # Accept Lab Pis that still use the older /api/lab-pi/... paths. This only
     # ever relaxed *which path* a node may use - it never removed the need for
     # a shared secret, and as of the F-01 fix an absent header is refused

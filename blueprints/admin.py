@@ -16,6 +16,7 @@ import magic
 
 from models import (Booking, Course, Experiment, LabPi, LabPiHeartbeat,
                     Session, SystemLog, User, db, utcnow)
+from services.netguard import UnsafeNodeAddress, validate_address, validate_port
 import sockets
 from services import importer, mailer, nodes, timeutil, validators
 
@@ -379,9 +380,16 @@ def devices():
 def add_device():
     """Ask the IP for its details rather than making the admin retype them."""
     ip = (request.form.get("ip_address") or "").strip()
-    port = int(request.form.get("port") or 5000)
     if not ip:
         flash("Enter the node's IP address.", "error")
+        return redirect(url_for("admin.devices"))
+    # Validated before probe(), because probe() is itself an outbound request
+    # to whatever is typed here.
+    try:
+        ip = validate_address(ip)
+        port = validate_port(request.form.get("port") or 5000)
+    except UnsafeNodeAddress as e:
+        flash(f"That is not a usable bench address: {e}", "error")
         return redirect(url_for("admin.devices"))
 
     manual_id = (request.form.get("node_id") or "").strip()
@@ -442,8 +450,13 @@ def add_device():
 def edit_device(node_id):
     node = LabPi.query.get_or_404(node_id)
     node.name = (request.form.get("name") or node.name).strip()
-    node.ip_address = (request.form.get("ip_address") or node.ip_address).strip()
-    node.port = int(request.form.get("port") or node.port)
+    try:
+        node.ip_address = validate_address(
+            (request.form.get("ip_address") or node.ip_address).strip())
+        node.port = validate_port(request.form.get("port") or node.port)
+    except UnsafeNodeAddress as e:
+        flash(f"That is not a usable bench address: {e}", "error")
+        return redirect(url_for("admin.devices"))
     node.location = request.form.get("location")
     node.experiment_id = request.form.get("experiment_id") or None
     node.is_active = request.form.get("is_active") == "on"

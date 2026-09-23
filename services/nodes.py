@@ -62,7 +62,9 @@ def probe(ip_address, port=5000):
         url = f"http://{ip_address}:{port}{path}"
         try:
             r = requests.get(url, timeout=_timeout(), headers=_headers(),
-                             allow_redirects=True)
+                             # A node that answers with a redirect must not
+                             # be able to steer the portal elsewhere.
+                             allow_redirects=False)
         except requests.exceptions.ConnectTimeout:
             return None, (f"No response from {ip_address}:{port}. The address is "
                           f"reachable but nothing answered in time - check the "
