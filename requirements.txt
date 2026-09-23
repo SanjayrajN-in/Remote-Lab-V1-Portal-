@@ -1,18 +1,25 @@
-Flask==3.0.3
+Flask==3.1.3
 Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
 Flask-Mail==0.10.0
-Werkzeug==3.0.3
-SQLAlchemy==2.0.31
-requests==2.32.3
-python-dotenv==1.0.1
+Werkzeug==3.1.8
+SQLAlchemy==2.0.54
+requests==2.34.2
+python-dotenv==1.2.3
 openpyxl==3.1.5
-gunicorn==22.0.0
+gunicorn==26.2.0
+
+# Magic-byte sniffing for uploaded SOP PDFs (blueprints/admin.py). Was imported
+# but never declared - a fresh venv built from this file would not start.
+python-magic==0.4.27
 
 # Master-side relay to the Lab Pi's own SocketIO app (serial/chart/oscilloscope)
-Flask-SocketIO==5.3.0
-python-socketio[client]==5.11.2
-# WebRTC audio relay (Lab Pi mic -> Master -> browser). Same pins as
-# remote_lab_admin's requirements.txt, which already runs this in production.
-aiortc>=1.5.0
-av>=14.0.0,<17.0.0
+Flask-SocketIO==5.6.1
+python-socketio[client]==5.17.0
+
+# WebRTC audio relay (Lab Pi mic -> Master -> browser). Pinned exactly rather
+# than left as ranges: these resolve the media and crypto stack that handles
+# untrusted network input, and an open range meant two installs from the same
+# commit could run different code.
+aiortc==1.15.0
+av==16.1.0
