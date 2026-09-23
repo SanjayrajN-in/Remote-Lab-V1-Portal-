@@ -11,7 +11,8 @@ active_sessions cache - the portal already has this as durable state.
 import threading
 
 from flask import current_app, request
-from flask_socketio import emit, join_room, leave_room
+from flask_login import current_user
+from flask_socketio import disconnect, emit, join_room, leave_room
 
 from models import Session
 from services.pi_relay import FORWARDED_EVENTS
@@ -22,13 +23,21 @@ _sid_session_map = {}
 _sid_lock = threading.Lock()
 
 
-def _node_for_session(session_key):
-    """The live session's node, or None if the key is unknown/expired/has no
-    node assigned."""
-    if not session_key:
+def _owned_node_for_session(session_key):
+    """The live session's node, but only for the user the session belongs to.
+
+    This used to authorise on the key alone, with no reference to
+    current_user - so anyone holding a session key could open the relay and
+    drive the bench's serial console and debugger. Flask-SocketIO makes the
+    Flask session available to handlers, so the same ownership test the
+    portal blueprint uses applies here.
+    """
+    if not session_key or not current_user.is_authenticated:
         return None
     sess = Session.query.filter_by(session_key=session_key).first()
     if not sess or not sess.is_live or not sess.node:
+        return None
+    if sess.user_id != current_user.id and not current_user.is_admin:
         return None
     return sess.node
 
@@ -58,9 +67,10 @@ def init_app(socketio):
             emit("feedback", "Server: socket connected (no session_key - nothing will work until one is set)")
             return
 
-        node = _node_for_session(session_key)
+        node = _owned_node_for_session(session_key)
         if not node:
-            emit("feedback", f"Server: no active bench found for session {session_key}")
+            emit("feedback", "Server: that session is not yours, or it has ended")
+            disconnect()
             return
 
         join_room(session_key)
@@ -95,9 +105,13 @@ def init_app(socketio):
             if not session_key:
                 emit("feedback", "[relay] No active session on this connection")
                 return
-            node = _node_for_session(session_key)
+            # Re-checked on every event, not just at connect, so that an
+            # admin revoking a session takes effect on the next message
+            # rather than whenever the browser happens to reconnect.
+            node = _owned_node_for_session(session_key)
             if not node:
-                emit("feedback", "[relay] No bench is currently assigned to this session")
+                emit("feedback", "[relay] This session is no longer yours")
+                disconnect()
                 return
             current_app.extensions["pi_relay"].forward(session_key, node.base_url, event, data)
         return handler

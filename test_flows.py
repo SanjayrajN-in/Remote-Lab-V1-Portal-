@@ -787,6 +787,32 @@ def main():
         check("the bad one is marked rejected",
               FirmwareUpload.query.filter_by(status="rejected").count() >= 1)
 
+    print("\nSocket relay authorisation")
+    from app import socketio as _sio
+    with mock.patch.object(app.extensions["pi_relay"], "forward"):
+        sc = _sio.test_client(app, query_string=f"key={live_key}")
+        check("an unauthenticated socket is not relayed",
+              not sc.is_connected(), "still connected")
+
+        def _cookie_headers(client):
+            ck = client.get_cookie("session")
+            return {"Cookie": f"session={ck.value}"} if ck else {}
+
+        with app.test_client() as c:
+            login(c, "vik@t.edu", "otherpass1")
+            sc = _sio.test_client(app, headers=_cookie_headers(c),
+                                  query_string=f"key={live_key}")
+            check("another student's socket is not relayed",
+                  not sc.is_connected(), "still connected")
+
+        with app.test_client() as c:
+            login(c, "asha@t.edu", "studentpass1")
+            sc = _sio.test_client(app, headers=_cookie_headers(c),
+                                  query_string=f"key={live_key}")
+            check("the owning student's socket connects",
+                  sc.is_connected(), "owner was rejected")
+            sc.disconnect()
+
     print("\nEvery page renders")
     with app.test_client() as c:
         login(c, "admin@t.edu", "adminpass1")
