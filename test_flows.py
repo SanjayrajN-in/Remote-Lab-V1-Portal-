@@ -87,6 +87,26 @@ def main():
     hdr = {"X-Node-Secret": TEST_NODE_SECRET}
     node_hdr = {**hdr, "X-Node-Token": "node-token"}
 
+    print("\nPost-login redirect target")
+    BAD_NEXT = ["//attacker.example/", "/\\attacker.example",
+                "https://attacker.example", "http:/\\/\\attacker.example",
+                "//attacker.example"]
+    for bad in BAD_NEXT:
+        with app.test_client() as c:
+            r = c.post(f"/login?next={bad}",
+                       data={"email": "asha@t.edu", "password": "studentpass1"},
+                       follow_redirects=False)
+            loc = r.headers.get("Location", "")
+            check(f"next={bad!r} is not followed",
+                  "attacker.example" not in loc, f"Location={loc}")
+    with app.test_client() as c:
+        r = c.post("/login?next=/my-bookings",
+                   data={"email": "asha@t.edu", "password": "studentpass1"},
+                   follow_redirects=False)
+        check("a genuine relative next is still honoured",
+              r.headers.get("Location", "").endswith("/my-bookings"),
+              r.headers.get("Location", ""))
+
     print("\nStartup secret validation")
     from config import Config as _Cfg
 

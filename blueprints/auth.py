@@ -7,8 +7,31 @@ from models import PasswordResetToken, SystemLog, User, db, utcnow
 from services import mailer
 from werkzeug.security import check_password_hash, generate_password_hash
 import secrets
+from urllib.parse import urlparse
 
 bp = Blueprint("auth", __name__)
+
+def _is_safe_next(target):
+    """True only for a single-slash absolute path on this host.
+
+    The previous test was nxt.startswith("/"), which accepts
+    "//attacker.example" - a protocol-relative URL that browsers resolve to
+    an external host while still passing the check.
+
+    Deliberately stricter than resolving the URL and comparing hosts:
+    browsers treat a backslash as a path separator, so a form like
+    "http:/\\/\\host" reaches an external site even though urljoin()
+    resolves it to a local path. Where the parser and the browser disagree,
+    the browser wins, so only a plain "/path" form is accepted.
+    """
+    if not target or not target.startswith("/"):
+        return False
+    if target.startswith("//") or "\\" in target:
+        return False
+    parsed = urlparse(target)
+    return not parsed.scheme and not parsed.netloc
+
+
 
 # One message for every failure mode. /admin/login used to answer 401 for a
 # wrong password, 403 for a deactivated account and a different 403 for a
@@ -95,7 +118,7 @@ def login():
         if user.must_change_password:
             return redirect(url_for("auth.change_password"))
         nxt = request.args.get("next")
-        if nxt and nxt.startswith("/"):
+        if _is_safe_next(nxt):
             return redirect(nxt)
         return redirect(url_for("admin.dashboard") if user.is_admin
                         else url_for("portal.dashboard"))
