@@ -16,7 +16,10 @@
       <a href="{{ url_for('portal.bookings') }}" class="{{ 'active' if active == 'bookings' }}">My bookings</a>
       {% if current_user.is_admin %}<a href="{{ url_for('admin.dashboard') }}">Admin</a>{% endif %}
       <a href="{{ url_for('auth.change_password') }}" class="{{ 'active' if active == 'account' }}">Account</a>
-      <a href="{{ url_for('auth.logout') }}" class="btn btn-ghost btn-sm" style="margin-left:.4rem">Sign out</a>
+      <form method="post" action="{{ url_for('auth.logout') }}" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-ghost btn-sm" style="margin-left:.4rem">Sign out</button>
+      </form>
     {% else %}
       <a href="{{ url_for('portal.home') }}" class="btn btn-sm">Sign in</a>
     {% endif %}

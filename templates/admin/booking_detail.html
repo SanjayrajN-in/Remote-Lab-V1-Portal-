@@ -50,6 +50,7 @@
     {% if b.session.is_live %}
     <form method="post" action="{{ url_for('admin.end_session', session_id=b.session.id) }}" style="margin-top:1rem"
           onsubmit="return confirm('End this session now?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn btn-coral btn-sm">End session now</button>
     </form>
     {% endif %}
@@ -60,6 +61,7 @@
 <div class="card" style="margin-top:1.15rem">
   <form method="post" action="{{ url_for('admin.delete_booking', code=b.code) }}"
         onsubmit="return confirm('Delete booking {{ b.code }}? This cannot be undone.')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button class="btn btn-coral">Delete this booking</button>
   </form>
 </div>

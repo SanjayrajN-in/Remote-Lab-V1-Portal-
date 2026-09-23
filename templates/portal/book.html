@@ -24,6 +24,7 @@
   </form>
 
   <form method="post" id="bookForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="row-between" style="margin-bottom:.4rem">
       <label style="margin:0">Time slot on {{ on_date | dt('%A %d %B %Y') if on_date else '' }} <span class="muted" style="font-weight:600">({{ tz_label }})</span></label>
       <div class="legend">

@@ -17,6 +17,7 @@
       <p class="tiny muted">This is the lab management panel. Students sign in
          <a href="{{ url_for('auth.login') }}">here</a> instead.</p>
       <form method="post" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="field">
           <label for="email">Email</label>
           <input type="email" id="email" name="email" value="{{ email }}" required autofocus autocomplete="username">

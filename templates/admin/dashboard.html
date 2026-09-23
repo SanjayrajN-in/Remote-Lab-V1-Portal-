@@ -10,7 +10,10 @@
   </div>
   <div class="row">
     <span class="tiny muted">{{ current_user.full_name }}</span>
-    <a href="{{ url_for('auth.logout') }}" class="btn btn-coral btn-sm">Sign out</a>
+    <form method="post" action="{{ url_for('auth.logout') }}" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-coral btn-sm">Sign out</button>
+    </form>
   </div>
 </div>
 
@@ -56,6 +59,7 @@
           <td class="right">
             <form method="post" action="{{ url_for('admin.end_session', session_id=s.id) }}"
                   onsubmit="return confirm('End this session now? The student loses bench access immediately.')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button class="btn btn-coral btn-sm">End</button>
             </form>
           </td>

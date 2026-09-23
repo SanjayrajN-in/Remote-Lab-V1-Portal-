@@ -11,6 +11,7 @@ from flask import Flask, flash, redirect, render_template, request, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager
 from flask_socketio import SocketIO
+from flask_wtf.csrf import CSRFProtect
 
 from config import BASE_DIR, Config, validate_secrets
 from models import User, db, utcnow
@@ -32,6 +33,7 @@ login_manager.login_message_category = "info"
 # process's memory - the portal must run as a single worker (see
 # install/remote-lab-portal.service).
 socketio = SocketIO(async_mode="threading")
+csrf = CSRFProtect()
 
 
 @login_manager.user_loader
@@ -49,6 +51,7 @@ def create_app(config_object=Config):
     app = Flask(__name__)
     app.config.from_object(config_object)
     validate_secrets(app.config)
+    csrf.init_app(app)
 
     # nginx terminates TLS and proxies to this app, so without this the
     # request looks like plain HTTP from 127.0.0.1: HSTS never fires and,
@@ -131,9 +134,15 @@ def create_app(config_object=Config):
     app.register_blueprint(portal_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(node_bp)
+    # The node blueprints authenticate with a shared secret and a per-node
+    # token in request headers, not with a session cookie, so there is no
+    # cookie for a third-party site to ride on and nothing for CSRF to
+    # protect. Requiring a token here would simply break the benches.
+    csrf.exempt(node_bp)
     app.register_blueprint(firmware_bp)
     # Accepts Lab Pis that still speak the older /api/lab-pi/... paths.
     app.register_blueprint(legacy_bp)
+    csrf.exempt(legacy_bp)
 
     # Logged once per process rather than once per worker per import, which
     # otherwise repeats this eight times on a four-worker gunicorn start.

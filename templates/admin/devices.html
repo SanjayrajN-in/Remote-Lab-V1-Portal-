@@ -40,10 +40,12 @@
             <button class="btn btn-ghost btn-sm" data-open="node{{ n.id }}">Edit</button>
             <a href="{{ url_for('admin.lab_pi_ui_settings', node_id=n.id) }}" class="btn btn-ghost btn-sm">UI settings</a>
             <form method="post" action="{{ url_for('admin.refresh_device', node_id=n.id) }}" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button class="btn btn-ghost btn-sm">Ping</button>
             </form>
             <form method="post" action="{{ url_for('admin.delete_device', node_id=n.id) }}" style="display:inline"
                   onsubmit="return confirm('Remove {{ n.name }}?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button class="btn btn-coral btn-sm">Delete</button>
             </form>
           </td>
@@ -72,6 +74,7 @@
 <div class="modal" id="addNode" role="dialog" aria-modal="true">
   <div class="modal-box">
     <form method="post" action="{{ url_for('admin.add_device') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="modal-head"><h2 style="margin:0">Add a node</h2><button type="button" class="x-btn" data-close>&times;</button></div>
       <div class="modal-body">
         <p>Enter the Pi's address. The portal asks it who it is and which experiment it's wired to.</p>
@@ -98,6 +101,7 @@
 <div class="modal" id="node{{ n.id }}" role="dialog" aria-modal="true">
   <div class="modal-box">
     <form method="post" action="{{ url_for('admin.edit_device', node_id=n.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="modal-head"><h2 style="margin:0">{{ n.name }}</h2><button type="button" class="x-btn" data-close>&times;</button></div>
       <div class="modal-body">
         <div class="field"><label>Display name</label><input type="text" name="name" value="{{ n.name }}"></div>

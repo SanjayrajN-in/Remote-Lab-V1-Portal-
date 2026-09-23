@@ -30,6 +30,7 @@
             <button class="btn btn-ghost btn-sm" data-open="edit{{ e.id }}">Edit</button>
             <form method="post" action="{{ url_for('admin.delete_experiment', experiment_id=e.id) }}" style="display:inline"
                   onsubmit="return confirm('Delete {{ e.name }}? If it has bookings it will be hidden instead.')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button class="btn btn-coral btn-sm">Delete</button>
             </form>
           </td>
@@ -75,6 +76,7 @@
 <div class="modal" id="addExp" role="dialog" aria-modal="true">
   <div class="modal-box">
     <form method="post" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="modal-head"><h2 style="margin:0">Add an experiment</h2><button type="button" class="x-btn" data-close>&times;</button></div>
       <div class="modal-body">{{ exp_fields() }}</div>
       <div class="modal-foot">
@@ -89,6 +91,7 @@
 <div class="modal" id="edit{{ e.id }}" role="dialog" aria-modal="true">
   <div class="modal-box">
     <form method="post" action="{{ url_for('admin.edit_experiment', experiment_id=e.id) }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="modal-head"><h2 style="margin:0">Edit {{ e.name }}</h2><button type="button" class="x-btn" data-close>&times;</button></div>
       <div class="modal-body">
         {{ exp_fields(e) }}

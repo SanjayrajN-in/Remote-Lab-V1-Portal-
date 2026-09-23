@@ -102,6 +102,15 @@ class Config:
     PASSWORD_CHANGE_MIN_MINUTES = 5
     REMEMBER_COOKIE_HTTPONLY = True
 
+    # CSRF tokens stay valid for as long as the signed-in session does, rather
+    # than Flask-WTF's default one hour. The lab page is loaded once and then
+    # left open for the whole slot; with the default, a booking that runs past
+    # the hour would start getting 400s on the flash button and every relay
+    # POST, mid-experiment. The token is still bound to the session, so it
+    # dies at sign-out or session-token rotation - what is removed is the age
+    # limit, not the scope.
+    WTF_CSRF_TIME_LIMIT = None
+
 
 # Values that must never protect a running instance. Anything here - or a
 # secret shorter than MIN_SECRET_LENGTH - stops the app at start-up rather

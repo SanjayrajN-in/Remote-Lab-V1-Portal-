@@ -180,6 +180,55 @@ def main():
           "\nFORGED LOG LINE" not in joined)
     _root.removeHandler(_cap)
 
+    print("\nCSRF protection")
+    _tmpc = tempfile.mkdtemp()
+    _appc = build_app(_tmpc)
+    _appc.config["WTF_CSRF_ENABLED"] = True
+    seed(_appc)
+    with _appc.test_client() as c:
+        r = c.post("/login", data={"email": "asha@t.edu",
+                                   "password": "studentpass1"})
+        check("a form POST with no CSRF token is refused",
+              r.status_code == 400, f"got {r.status_code}")
+        r = c.get("/login")
+        check("the sign-in form carries a CSRF token",
+              b"csrf_token" in r.data)
+    with _appc.test_client() as c:
+        r = c.post("/api/lab-pi/heartbeat", headers=hdr,
+                   json={"lab_pi_id": "csrf-exempt-probe", "cpu": 1})
+        check("the node API is exempt - it authenticates by header, not cookie",
+              r.status_code == 200, f"got {r.status_code}")
+    check("sign-out is a POST, so a link cannot force it",
+          "/logout" not in {r.rule for r in app.url_map.iter_rules()
+                            if "GET" in (r.methods or set())},
+          "still reachable by GET")
+
+    def _token(resp):
+        m = re.search(rb'name="csrf_token"[^>]*value="([^"]+)"', resp.data)
+        return m.group(1).decode() if m else ""
+
+    # Blocking everything would also pass the checks above, so prove the
+    # legitimate path still works - and that a token minted for someone
+    # else's session does not.
+    with _appc.test_client() as c:
+        tok = _token(c.get("/login"))
+        r = c.post("/login", data={"email": "asha@t.edu",
+                                   "password": "studentpass1",
+                                   "csrf_token": tok}, follow_redirects=True)
+        check("a form POST with a valid token is accepted",
+              b"My experiments" in r.data, f"got {r.status_code}")
+    with _appc.test_client() as a, _appc.test_client() as b:
+        stolen = _token(a.get("/login"))
+        b.get("/login")
+        r = b.post("/login", data={"email": "asha@t.edu",
+                                   "password": "studentpass1",
+                                   "csrf_token": stolen})
+        check("a token minted for another session is refused",
+              r.status_code == 400, f"got {r.status_code}")
+    check("CSRF tokens last as long as the session, not one hour",
+          _appc.config.get("WTF_CSRF_TIME_LIMIT") is None,
+          f"got {_appc.config.get('WTF_CSRF_TIME_LIMIT')}")
+
     print("\nStartup secret validation")
     from config import Config as _Cfg
 
@@ -220,7 +269,7 @@ def main():
         login(c, "asha@t.edu", "studentpass1")
         with app.app_context():
             before = User.query.filter_by(email="asha@t.edu").first().session_token
-        c.get("/logout")
+        c.post("/logout")
         with app.app_context():
             after = User.query.filter_by(email="asha@t.edu").first().session_token
         check("login issues a session token", before is not None)

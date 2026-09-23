@@ -23,6 +23,7 @@
     </div>
     <form method="post" action="{{ url_for('admin.reset_user_password', user_id=user.id) }}" style="margin-top:1rem"
           onsubmit="return confirm('Issue a new temporary password and email it to {{ user.email }}?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn btn-amber btn-sm">Reset password</button>
     </form>
   </div>
@@ -30,6 +31,7 @@
   <div class="card">
     <div class="card-head"><h3>Edit</h3></div>
     <form method="post" action="{{ url_for('admin.edit_user', user_id=user.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="field"><label for="full_name">Full name</label><input type="text" id="full_name" name="full_name" value="{{ user.full_name }}" required></div>
       <div class="field"><label for="roll_number">Roll number</label><input type="text" id="roll_number" name="roll_number" value="{{ user.roll_number or '' }}"></div>
       <div class="field"><label for="role">Role</label>

@@ -58,6 +58,7 @@
       {% endif %}
       <form method="post" action="{{ url_for('portal.cancel_booking', code=b.code) }}"
             onsubmit="return confirm('Cancel booking {{ b.code }}? The slot goes back into the pool.')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button class="btn btn-ghost btn-sm">Cancel</button>
       </form>
     </div>

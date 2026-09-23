@@ -23,6 +23,7 @@
           <td class="right">
             <form method="post" action="{{ url_for('admin.delete_course', course_id=c.id) }}"
                   onsubmit="return confirm('Delete {{ c.code }}?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button class="btn btn-coral btn-sm">Delete</button>
             </form>
           </td>
@@ -41,6 +42,7 @@
 <div class="modal" id="addCourse" role="dialog" aria-modal="true">
   <div class="modal-box">
     <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="modal-head"><h2 style="margin:0">Add a course</h2><button type="button" class="x-btn" data-close>&times;</button></div>
       <div class="modal-body">
         <div class="field"><label for="code">Course code</label><input type="text" id="code" name="code" placeholder="E3-241" required></div>

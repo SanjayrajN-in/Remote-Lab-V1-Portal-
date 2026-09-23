@@ -39,6 +39,7 @@
             <a href="{{ url_for('admin.user_detail', user_id=u.id) }}" class="btn btn-ghost btn-sm">View</a>
             <form method="post" action="{{ url_for('admin.delete_user', user_id=u.id) }}" style="display:inline"
                   onsubmit="return confirm('Delete {{ u.email }} and all their bookings? This cannot be undone.')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button class="btn btn-coral btn-sm">Delete</button>
             </form>
           </td>
@@ -58,6 +59,7 @@
 <div class="modal" id="addUser" role="dialog" aria-modal="true">
   <div class="modal-box">
     <form method="post" action="{{ url_for('admin.create_user') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="modal-head"><h2 style="margin:0">Add a user</h2><button type="button" class="x-btn" data-close>&times;</button></div>
       <div class="modal-body">
         <div class="field"><label for="full_name">Full name</label><input type="text" id="full_name" name="full_name" required></div>
@@ -83,6 +85,7 @@
 <div class="modal" id="bulkUser" role="dialog" aria-modal="true">
   <div class="modal-box">
     <form method="post" action="{{ url_for('admin.bulk_upload') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="modal-head"><h2 style="margin:0">Bulk upload users</h2><button type="button" class="x-btn" data-close>&times;</button></div>
       <div class="modal-body">
         <p>Upload a CSV or Excel file. Every new user gets an account and an

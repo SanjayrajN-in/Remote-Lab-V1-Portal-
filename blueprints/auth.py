@@ -163,9 +163,11 @@ def admin_login():
     return render_template("admin_login.html", email="")
 
 
-@bp.route("/logout")
+@bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
+    """POST only. As a GET it could be triggered by any page that could make a
+    browser fetch a URL, which is a nuisance-level forced sign-out."""
     # Rotate the token *before* dropping the login. logout_user() makes
     # current_user anonymous, so doing this afterwards silently no-ops and
     # other sessions for this account stay valid.

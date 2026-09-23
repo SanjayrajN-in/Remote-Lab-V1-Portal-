@@ -53,6 +53,7 @@
             <a href="{{ url_for('admin.booking_detail', code=b.code) }}" class="btn btn-ghost btn-sm">View</a>
             <form method="post" action="{{ url_for('admin.delete_booking', code=b.code) }}" style="display:inline"
                   onsubmit="return confirm('Delete booking {{ b.code }}?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button class="btn btn-coral btn-sm">Delete</button>
             </form>
           </td>

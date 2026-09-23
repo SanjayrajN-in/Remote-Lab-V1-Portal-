@@ -229,6 +229,15 @@ html,body{overflow:auto !important;background:var(--p-bg) !important;color:var(-
 .slot-feedback{color:#00ff7f !important;border-color:#1c2836 !important}
 .chart-video-row>.card:first-child h3,.chart-video-row>.card:first-child .chart-field>span{color:#9fb2c8 !important}
 </style>
+
+<script>
+// Every state-changing fetch must carry the CSRF token. Read once here so
+// each call site does not have to remember it.
+const CSRF_TOKEN = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+function csrfHeaders(extra) {
+  return Object.assign({'X-CSRFToken': CSRF_TOKEN}, extra || {});
+}
+</script>
 </head>
 <body>
 <!-- Portal top bar - matches login/dashboard. -->
@@ -987,7 +996,7 @@ let currentUiConfig = uiConfigFromServer; // kept in sync by applyUiConfig() on 
     const fd = new FormData();
     fd.append('elf', file);
     fd.append('session_key', sessionKey);
-    fetch('/debug/upload-elf', { method: 'POST', body: fd })
+    fetch('/debug/upload-elf', { method: 'POST', headers: csrfHeaders(), body: fd })
       .then(r => r.json())
       .then(j => {
         if (j.filename) {
@@ -1422,7 +1431,7 @@ powerSupplyBtn.addEventListener('click', async () => {
     const newState = powerSupplyState === 'off' ? 'on' : 'off';
     const response = await fetch('/toggle_relay', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: csrfHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ 
         state: newState,
         session_key: sessionKey
@@ -1662,7 +1671,7 @@ if(flashBtn) {
     fd.append('board', board);
     fd.append('port', port);
     fd.append('session_key', sessionKey);
-    fetch('/flash', { method:'POST', body: fd })
+    fetch('/flash', { method:'POST', headers: csrfHeaders(), body: fd })
       .then(r => r.json()).then(j => {
         flashStatus.innerText = j.status || 'Flashing started';
       }).catch(e => {
@@ -1697,7 +1706,7 @@ factoryResetBtn.addEventListener('click', async () => {
     console.log(`[factory] Requesting factory reset for ${board} on ${port || '(server default)'}...`);
     const resp = await fetch('/factory_reset', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: csrfHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ board, port, session_key: sessionKey })
     });
     const j = await resp.json();
@@ -2181,7 +2190,7 @@ window.addEventListener('beforeunload', (e) => {
   // Turn off relay
   fetch('/toggle_relay', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: csrfHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ state: 'off', session_key: sessionKey })
   }).catch(() => {});
 });
@@ -2820,12 +2829,12 @@ async function startAudio() {
         await audioPC.setLocalDescription(offer);
 
         const response = await fetch(audioOfferUrl, {
-            method: 'POST',
+            method: 'POST', headers: csrfHeaders(),
             body: JSON.stringify({
                 sdp: audioPC.localDescription.sdp,
                 type: audioPC.localDescription.type
             }),
-            headers: { 'Content-Type': 'application/json' }
+            headers: csrfHeaders({ 'Content-Type': 'application/json' })
         });
 
         if (!response.ok) {
@@ -3160,7 +3169,7 @@ if (!sessionKey) {
         // Send request to server to remove session and turn off relay
         fetch('/remove_session', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: csrfHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ session_key: sessionKey })
         });
 

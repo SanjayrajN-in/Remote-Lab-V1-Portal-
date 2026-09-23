@@ -57,6 +57,7 @@
         <h2>Sign in</h2>
         <p class="tiny muted">Use the address your invitation was sent to.</p>
         <form method="post" action="{{ url_for('auth.login') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="from" value="home">
           <div class="field">
             <label for="home_email">Email</label>

@@ -12,6 +12,7 @@
       <h2>Sign in</h2>
       <p class="tiny muted">Use the address your invitation was sent to.</p>
       <form method="post" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="field">
           <label for="email">Email</label>
           <input type="email" id="email" name="email" value="{{ email }}" required autofocus autocomplete="username">

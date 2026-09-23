@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
 <meta charset="utf-8" />
 <title>Live Video Feed - Embedded Virtual Lab</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -17,6 +18,15 @@ html, body { height: 100%; margin: 0; font-family: 'Inter', sans-serif; backgrou
 .vid-btn:hover { background: #3b82f6; color: #041726; }
 .button { padding: 10px 15px; border-radius: 6px; border: none; cursor: pointer; background: #3b82f6; color: #041726; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; pointer-events: auto; }
 </style>
+
+<script>
+// Every state-changing fetch must carry the CSRF token. Read once here so
+// each call site does not have to remember it.
+const CSRF_TOKEN = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+function csrfHeaders(extra) {
+  return Object.assign({'X-CSRFToken': CSRF_TOKEN}, extra || {});
+}
+</script>
 </head>
 <body>
 <div class="video-container" id="videoContainer">
@@ -151,12 +161,12 @@ async function startAudio() {
         await audioPC.setLocalDescription(offer);
 
         const response = await fetch(audioOfferUrl, {
-            method: 'POST',
+            method: 'POST', headers: csrfHeaders(),
             body: JSON.stringify({
                 sdp: audioPC.localDescription.sdp,
                 type: audioPC.localDescription.type
             }),
-            headers: { 'Content-Type': 'application/json' }
+            headers: csrfHeaders({ 'Content-Type': 'application/json' })
         });
 
         if (!response.ok) {

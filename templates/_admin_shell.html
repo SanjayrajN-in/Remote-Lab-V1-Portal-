@@ -26,7 +26,10 @@
       <a href="{{ url_for('admin.sessions') }}" class="{{ 'active' if active == 'sessions' }}"><span class="ico">◷</span><span>Sessions</span></a>
       <div class="nav-foot">
         <a href="{{ url_for('portal.home') }}"><span class="ico">⌂</span><span>Student view</span></a>
-        <a href="{{ url_for('auth.logout') }}"><span class="ico">→</span><span>Sign out</span></a>
+        <form method="post" action="{{ url_for('auth.logout') }}" style="display:contents">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" style="background:none;border:0;padding:inherit;font:inherit;color:inherit;cursor:pointer;display:flex;align-items:center;gap:inherit;width:100%;text-align:left"><span class="ico">→</span><span>Sign out</span></button>
+        </form>
       </div>
     </nav>
   </aside>

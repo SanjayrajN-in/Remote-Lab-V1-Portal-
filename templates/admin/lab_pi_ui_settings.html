@@ -42,6 +42,7 @@
 {% endmacro %}
 
 <form id="mainSettingsForm" method="post" action="{{ url_for('admin.lab_pi_ui_settings', node_id=device.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="all_control_keys" value="{{ control_keys | map('first') | join(',') }}">
 
   <div class="card settings-card">
@@ -165,11 +166,13 @@
         <div class="entry-actions">
           <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit('editPort_{{ p.id }}')">Edit</button>
           <form method="post" action="{{ url_for('admin.lab_pi_ui_port_delete', node_id=device.id, port_id=p.id) }}" style="margin:0" onsubmit="return confirm('Remove this serial port?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-coral btn-sm">Remove</button>
           </form>
         </div>
       </div>
       <form id="editPort_{{ p.id }}" class="edit-form" method="post" action="{{ url_for('admin.lab_pi_ui_port_edit', node_id=device.id, port_id=p.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="field"><label class="field-label">Label</label><input type="text" name="sp_label" value="{{ p.label }}" required style="width:200px"></div>
         <div class="field"><label class="field-label">Port (blank = student picks)</label>{{ port_picker('sp_port_edit_' + p.id, p.port) }}</div>
         <div class="field"><label class="field-label">Baud</label>
@@ -192,6 +195,7 @@
   {% endif %}
 
   <form class="add-form" method="post" action="{{ url_for('admin.lab_pi_ui_port_add', node_id=device.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="field"><label class="field-label" for="sp_label">Label</label><input type="text" id="sp_label" name="sp_label" placeholder="e.g. Teacher MCU" required style="width:200px"></div>
     <div class="field"><label class="field-label" for="sp_port_new">Port (blank = student picks)</label>{{ port_picker('sp_port_new', '') }}</div>
     <div class="field"><label class="field-label" for="sp_baud">Baud</label>
@@ -226,11 +230,13 @@
         <div class="entry-actions">
           <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit('editRc_{{ c.id }}')">Edit</button>
           <form method="post" action="{{ url_for('admin.lab_pi_ui_control_delete', node_id=device.id, control_id=c.id) }}" style="margin:0" onsubmit="return confirm('Remove this control?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-coral btn-sm">Remove</button>
           </form>
         </div>
       </div>
       <form id="editRc_{{ c.id }}" class="edit-form" method="post" action="{{ url_for('admin.lab_pi_ui_control_edit', node_id=device.id, control_id=c.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="rc_type" value="{{ c.type }}">
         <div class="field"><label class="field-label">Label</label><input type="text" name="rc_label" value="{{ c.label }}" required style="width:200px"></div>
         <div class="field"><label class="field-label">Port</label>
@@ -269,6 +275,7 @@
   {% endif %}
 
   <form class="add-form" method="post" action="{{ url_for('admin.lab_pi_ui_control_add', node_id=device.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="field">
       <label class="field-label" for="rc_type">Type</label>
       <select id="rc_type" name="rc_type" onchange="updateRcFields()" style="width:180px">
