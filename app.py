@@ -35,7 +35,13 @@ socketio = SocketIO(async_mode="threading")
 
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, int(user_id))
+    from flask import session as _s
+    user = db.session.get(User, int(user_id))
+    if user is None:
+        return None
+    if user.session_token and _s.get("stok") not in (None, user.session_token):
+        return None
+    return user
 
 
 def create_app(config_object=Config):

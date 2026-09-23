@@ -71,6 +71,9 @@ class Config:
 
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = True
+    REMEMBER_COOKIE_SECURE = True
+    REMEMBER_COOKIE_HTTPONLY = True
     # --- session / security policy ---
     from datetime import timedelta as _td
     PERMANENT_SESSION_LIFETIME = _td(minutes=30)

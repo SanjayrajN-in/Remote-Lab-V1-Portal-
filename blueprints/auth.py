@@ -5,6 +5,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 
 from models import PasswordResetToken, SystemLog, User, db, utcnow
 from services import mailer
+import secrets
 
 bp = Blueprint("auth", __name__)
 
@@ -51,6 +52,8 @@ def login():
 
         login_user(user, remember=bool(request.form.get("remember")))
         user.register_successful_login()
+        user.session_token = secrets.token_hex(32)
+        flask_session["stok"] = user.session_token
         SystemLog.write(f"{user.email} signed in", category="auth", user_id=user.id)
         db.session.commit()
 
@@ -95,6 +98,8 @@ def admin_login():
 
         login_user(user, remember=bool(request.form.get("remember")))
         user.last_login = utcnow()
+        user.session_token = secrets.token_hex(32)
+        flask_session["stok"] = user.session_token
         SystemLog.write(f"{user.email} signed in to the admin panel",
                         category="auth", user_id=user.id)
         db.session.commit()
@@ -110,6 +115,9 @@ def admin_login():
 @login_required
 def logout():
     logout_user()
+    if current_user.is_authenticated:
+        current_user.session_token = secrets.token_hex(32)
+        db.session.commit()
     flask_session.clear()
     from flask import make_response
     resp = make_response(redirect(url_for("portal.home")))

@@ -66,6 +66,7 @@ class User(UserMixin, db.Model):
     failed_logins = db.Column(db.Integer, default=0, nullable=False)
     locked_until = db.Column(db.DateTime)
     password_changed_at = db.Column(db.DateTime)
+    session_token = db.Column(db.String(64))
 
     department = db.relationship("Department", back_populates="users")
     courses = db.relationship("Course", secondary=enrollments, back_populates="students")

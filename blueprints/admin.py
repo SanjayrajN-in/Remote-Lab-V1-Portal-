@@ -12,6 +12,7 @@ from flask import (Blueprint, abort, current_app, flash, redirect,
                    render_template, request, url_for)
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
+import magic
 
 from models import (Booking, Course, Experiment, LabPi, LabPiHeartbeat,
                     Session, SystemLog, User, db, utcnow)
@@ -36,6 +37,17 @@ def _slugify(text):
 
 
 # --------------------------------------------------------------------------
+
+def _looks_like_pdf(fileobj):
+    head = fileobj.read(2048)
+    fileobj.seek(0)
+    if not head.startswith(b'%PDF-'):
+        return False
+    try:
+        return magic.from_buffer(head, mime=True) == 'application/pdf'
+    except Exception:
+        return head.startswith(b'%PDF-')
+
 
 @bp.route("/")
 @admin_required
@@ -289,8 +301,8 @@ def experiments():
         )
         pdf = request.files.get("sop_pdf")
         if pdf and pdf.filename:
-            if not pdf.filename.lower().endswith(".pdf"):
-                flash("The manual must be a PDF.", "error")
+            if not pdf.filename.lower().endswith(".pdf") or not _looks_like_pdf(pdf.stream):
+                flash("The manual must be a valid PDF.", "error")
                 return redirect(url_for("admin.experiments"))
             fname = secure_filename(f"{slug}.pdf")
             current_app.config["SOP_FOLDER"].mkdir(parents=True, exist_ok=True)
@@ -322,7 +334,7 @@ def edit_experiment(experiment_id):
     exp.is_active = request.form.get("is_active") == "on"
 
     pdf = request.files.get("sop_pdf")
-    if pdf and pdf.filename and pdf.filename.lower().endswith(".pdf"):
+    if pdf and pdf.filename and pdf.filename.lower().endswith(".pdf") and _looks_like_pdf(pdf.stream):
         fname = secure_filename(f"{exp.slug}.pdf")
         current_app.config["SOP_FOLDER"].mkdir(parents=True, exist_ok=True)
         pdf.save(current_app.config["SOP_FOLDER"] / fname)
