@@ -213,7 +213,6 @@ def heartbeat():
             "session_key": live.session_key,
             "start_time": live.starts_at.isoformat(),
             "end_time": live.expires_at.isoformat(),
-            "user_email": live.user.email,
             "booking_id": live.booking.code if live.booking else None,
             "board_type": (live.node.board if live.node else "arduino"),
         }
@@ -250,7 +249,6 @@ def active_session(node_id):
         "session_key": live.session_key,
         "start_time": live.starts_at.isoformat(),
         "end_time": live.expires_at.isoformat(),
-        "user_email": live.user.email,
         "booking_id": live.booking.code if live.booking else None,
         "board_type": node.board or "arduino",
     })
@@ -277,8 +275,7 @@ def sessions(node_id):
         "server_time": now.isoformat(),
         "sessions": [{
             "session_key": s.session_key,
-            "user": s.user.full_name,
-            "user_email": s.user.email,
+            "display_label": s.booking.code if s.booking else "session",
             "experiment": s.experiment.name,
             "starts_at": s.starts_at.isoformat(),
             "expires_at": s.expires_at.isoformat(),
@@ -309,8 +306,7 @@ def validate():
 
     return jsonify({
         "valid": True,
-        "user": s.user.full_name,
-        "user_email": s.user.email,
+        "display_label": s.booking.code if s.booking else "session",
         "experiment": s.experiment.name,
         "experiment_slug": s.experiment.slug,
         "seconds_left": s.seconds_left,

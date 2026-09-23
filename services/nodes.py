@@ -114,10 +114,9 @@ def push_session(session):
     payload = {
         "session_key": session.session_key,
         "booking_id": session.booking.code if session.booking else None,
-        "user_email": session.user.email,
         "session_end_time": expires_ms,
         # Extra fields, ignored by the deployed Pi, used by newer nodes.
-        "user": session.user.full_name,
+        "display_label": session.booking.code if session.booking else "session",
         "experiment": session.experiment.name,
         "experiment_slug": session.experiment.slug,
         "starts_at": session.starts_at.isoformat(),

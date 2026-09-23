@@ -168,8 +168,7 @@ def node_sessions(node_id):
         "server_time": now.isoformat(),
         "sessions": [{
             "session_key": s.session_key,
-            "user": s.user.full_name,
-            "user_email": s.user.email,
+            "display_label": s.booking.code if s.booking else "session",
             "experiment": s.experiment.name,
             "starts_at": s.starts_at.isoformat(),
             "expires_at": s.expires_at.isoformat(),
@@ -210,8 +209,7 @@ def validate_session():
 
     return jsonify({
         "valid": True,
-        "user": s.user.full_name,
-        "user_email": s.user.email,
+        "display_label": s.booking.code if s.booking else "session",
         "experiment": s.experiment.name,
         "experiment_slug": s.experiment.slug,
         "seconds_left": s.seconds_left,

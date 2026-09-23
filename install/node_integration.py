@@ -85,7 +85,9 @@ def session_start():
         return jsonify({"error": "session_key is required"}), 400
     with _lock:
         SESSIONS[key] = data
-    log.info("Session %s accepted for %s", key, data.get("user"))
+    # The master deliberately sends no student identity - only a booking-code
+    # label - so nothing here can log who is at the bench.
+    log.info("Session %s accepted (%s)", key, data.get("display_label", "session"))
     return jsonify({"ok": True})
 
 

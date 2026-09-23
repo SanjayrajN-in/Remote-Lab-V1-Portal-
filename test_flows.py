@@ -288,6 +288,40 @@ def main():
         check("session/end with a wrong node token is refused",
               r.status_code == 401, f"got {r.status_code}")
 
+    print("\nNode payloads carry no student PII")
+    PII = ("user_email", "user")
+    with app.test_client() as c:
+        probes = [
+            ("legacy sessions", c.get("/api/lab-pi/bench-1/sessions", headers=hdr)),
+            ("legacy active-session",
+             c.get("/api/lab-pi/bench-1/active-session", headers=hdr)),
+            ("legacy validate",
+             c.post("/api/lab-pi/session/validate", headers=hdr,
+                    json={"session_key": key})),
+            ("node sessions", c.get("/api/node/bench-1/sessions", headers=node_hdr)),
+            ("node validate",
+             c.post("/api/node/session/validate", headers=node_hdr,
+                    json={"session_key": key, "node_id": "bench-1"})),
+        ]
+        for label, r in probes:
+            body = r.get_data(as_text=True)
+            leaked = [f for f in PII if f'"{f}"' in body]
+            check(f"{label} returns no student identity", not leaked,
+                  f"leaked {leaked} (status {r.status_code})")
+            check(f"{label} still answers", r.status_code in (200, 403, 404),
+                  f"status {r.status_code}")
+
+    with app.app_context():
+        sess = Session.query.filter_by(session_key=key).first()
+        with mock.patch("services.nodes.requests.post") as post:
+            post.return_value.raise_for_status = lambda: None
+            post.return_value.json = lambda: {"ok": True}
+            from services import nodes as _nodes
+            _nodes.push_session(sess)
+            sent = post.call_args.kwargs.get("json") or {}
+        check("push_session sends no student identity to the bench",
+              not [f for f in PII if f in sent], f"payload keys: {sorted(sent)}")
+
     print("\nFirmware upload authorisation")
 
     def _fw():
@@ -341,7 +375,8 @@ def main():
         r = c.get("/api/node/bench-1/sessions", headers=node_hdr)
         sessions = r.get_json()["sessions"]
         check("poller sees the live session", len(sessions) == 1)
-        check("session carries who it belongs to", sessions[0]["user"] == "Asha Rao")
+        check("session carries a non-identifying label, not the student",
+              "user" not in sessions[0] and sessions[0].get("display_label"))
 
         r = c.post("/api/node/session/validate", headers=node_hdr,
                    json={"session_key": key, "node_id": "bench-1"})
