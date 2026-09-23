@@ -221,6 +221,10 @@ def forgot_password():
         email = (request.form.get("email") or "").strip().lower()
         user = User.query.filter_by(email=email).first()
         if user and user.is_active:
+            # Any earlier link for this account stops working the moment a new
+            # one is issued, so a leaked older link cannot be used later.
+            PasswordResetToken.query.filter_by(user_id=user.id, used_at=None).update(
+                {"expires_at": utcnow()})
             token = PasswordResetToken(user_id=user.id)
             db.session.add(token)
             db.session.commit()

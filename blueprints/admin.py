@@ -122,8 +122,12 @@ def create_user():
     sent = mailer.send_invitation(user, pw)
     SystemLog.write(f"Admin created user {email}", category="admin", user_id=current_user.id)
     db.session.commit()
+    # The password is deliberately not shown. A flash message is stored in the
+    # signed session cookie and rendered into the page, so putting a working
+    # credential there spreads it further than the mailbox it was meant for.
     flash(f"{name} added." + (" Invitation emailed." if sent else
-          f" Email is not configured - temporary password: {pw}"), "success")
+          " Email is not configured, so no invitation was sent - configure "
+          "SMTP and use Reset password to issue one."), "success")
     return redirect(url_for("admin.users"))
 
 
@@ -173,8 +177,9 @@ def bulk_upload():
     sent = sum(1 for user, pw in created if mailer.send_invitation(user, pw))
     flash(f"Added {len(created)} users; {sent} invitation emails sent.", "success")
     if sent < len(created):
-        flash("Email is not fully configured, so some invitations were only "
-              "written to the log. Check logs for temporary passwords.", "info")
+        flash("Email is not fully configured, so some invitations were not "
+              "sent. Configure SMTP and use Reset password for those accounts.",
+              "info")
     for p in problems[:8]:
         flash(p, "info")
     return redirect(url_for("admin.users"))
@@ -217,7 +222,8 @@ def reset_user_password(user_id):
     db.session.commit()
     sent = mailer.send_invitation(user, pw)
     flash(f"Password reset for {user.email}." +
-          ("" if sent else f" Temporary password: {pw}"), "success")
+          ("" if sent else " Email is not configured, so it could not be sent - "
+                          "configure SMTP and reset again."), "success")
     return redirect(url_for("admin.user_detail", user_id=user.id))
 
 

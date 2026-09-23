@@ -6,6 +6,7 @@ raises into a request handler - a failed invitation must not roll back the
 user account it was announcing.
 """
 import logging
+import uuid
 
 from flask import current_app, render_template
 
@@ -17,10 +18,18 @@ mail = Mail()
 
 
 def _send(subject, recipients, html, body):
+    """Send a message, or record that it could not be sent.
+
+    The body is never logged. It used to be written out in full when
+    MAIL_SERVER was unset, which put temporary passwords and single-use
+    password-reset links into the systemd journal in clear text, readable by
+    anyone in systemd-journal or adm and preserved in any log backup.
+    """
     app = current_app._get_current_object()
+    ref = uuid.uuid4().hex[:8]
     if not app.config.get("MAIL_SERVER"):
-        log.info("[mail:not-configured] to=%s subject=%s\n%s",
-                 recipients, subject, body)
+        log.error("[mail:not-configured] ref=%s to=%s subject=%r NOT SENT "
+                  "(configure MAIL_SERVER)", ref, recipients, subject)
         return False
     try:
         msg = Message(subject=subject, recipients=recipients, html=html, body=body)

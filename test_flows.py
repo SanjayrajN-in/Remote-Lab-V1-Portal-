@@ -126,6 +126,60 @@ def main():
     check("the shipped unit binds to loopback, not every interface",
           "--bind 127.0.0.1:" in open("install/remote-lab-portal.service").read())
 
+    print("\nSecrets must not reach logs or flash messages")
+    import logging as _lg
+    from services import mailer as _mailer
+    from models import PasswordResetToken as _PRT
+
+    class _Cap(_lg.Handler):
+        def __init__(self):
+            super().__init__()
+            self.lines = []
+        def emit(self, record):
+            try:
+                self.lines.append(record.getMessage())
+            except Exception:
+                pass
+
+    _cap = _Cap()
+    _root = _lg.getLogger()
+    _root.addHandler(_cap)
+    _root.setLevel(_lg.INFO)
+
+    with app.app_context():
+        u = User.query.filter_by(email="asha@t.edu").first()
+
+        _cap.lines.clear()
+        _mailer.send_invitation(u, "SuperSecret123")
+        joined = "\n".join(_cap.lines)
+        check("an invitation body is never written to the log",
+              "SuperSecret123" not in joined, joined[:120])
+        check("but the undelivered message is still recorded",
+              joined.strip() != "")
+
+        _cap.lines.clear()
+        _mailer.send_password_reset(u, "TOKENVALUE123")
+        joined = "\n".join(_cap.lines)
+        check("a reset link is never written to the log",
+              "TOKENVALUE123" not in joined, joined[:120])
+
+        t = _PRT(user_id=u.id)
+        db.session.add(t)
+        db.session.flush()
+        life = (t.expires_at - utcnow()).total_seconds()
+        check("reset tokens expire within an hour", life <= 3700, f"{life}s")
+        db.session.rollback()
+
+    _cap.lines.clear()
+    with app.test_client() as c:
+        c.post("/api/lab-pi/heartbeat", headers=hdr,
+               json={"lab_pi_id": "inject-probe",
+                     "name": "ok\nFORGED LOG LINE", "cpu": 1})
+    joined = "\n".join(_cap.lines)
+    check("a node payload cannot forge a log line",
+          "\nFORGED LOG LINE" not in joined)
+    _root.removeHandler(_cap)
+
     print("\nStartup secret validation")
     from config import Config as _Cfg
 

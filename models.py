@@ -139,7 +139,10 @@ class PasswordResetToken(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     token = db.Column(db.String(120), unique=True, nullable=False,
                       default=lambda: secrets.token_urlsafe(32))
-    expires_at = db.Column(db.DateTime, default=lambda: utcnow() + timedelta(hours=24))
+    # One hour, not twenty-four. A reset link is a live credential; the longer
+    # it is valid the longer a copy of it - in a mailbox, a log, a backup - is
+    # worth stealing.
+    expires_at = db.Column(db.DateTime, default=lambda: utcnow() + timedelta(hours=1))
     used_at = db.Column(db.DateTime)
     user = db.relationship("User")
 

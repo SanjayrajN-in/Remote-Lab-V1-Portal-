@@ -104,9 +104,21 @@ def _identify(data):
 
 
 def _log_first_payload(node_id, data):
-    if node_id not in _seen:
-        _seen.add(node_id)
-        log.info("First legacy payload from %s: %s", node_id, data)
+    """Log the shape of a node's first payload, once, safely.
+
+    This used to log the payload verbatim. It is attacker-influenced input,
+    so a newline inside any string value forged additional log lines.
+    """
+    if node_id in _seen:
+        return
+    _seen.add(node_id)
+    safe = {}
+    for k, v in list(data.items())[:20]:
+        key = str(k)[:40].replace("\n", " ").replace("\r", " ")
+        val = str(v)[:80].replace("\n", " ").replace("\r", " ")
+        safe[key] = val
+    log.info("First legacy payload from %s: %s",
+             str(node_id)[:60].replace("\n", " ").replace("\r", " "), safe)
 
 
 # --------------------------------------------------------------------------
