@@ -272,6 +272,22 @@ def main():
         r = c.get(f"/booking/{code}/start")
         check("another student cannot start your booking", r.status_code == 404)
 
+    print("\nNode session endpoints require the node's own token")
+    with app.test_client() as c:
+        r = c.post("/api/node/session/validate", headers=hdr,
+                   json={"session_key": key, "node_id": "bench-1"})
+        check("validate with the shared secret alone is refused",
+              r.status_code == 401, f"got {r.status_code}")
+        r = c.post("/api/node/session/end", headers=hdr,
+                   json={"session_key": key, "node_id": "bench-1"})
+        check("session/end with the shared secret alone is refused",
+              r.status_code == 401, f"got {r.status_code}")
+        r = c.post("/api/node/session/end",
+                   headers={**hdr, "X-Node-Token": "wrong-token"},
+                   json={"session_key": key, "node_id": "bench-1"})
+        check("session/end with a wrong node token is refused",
+              r.status_code == 401, f"got {r.status_code}")
+
     print("\nFirmware upload authorisation")
 
     def _fw():
@@ -318,22 +334,27 @@ def main():
                    json={"node_id": "bench-1", "cpu": 1})
         check("heartbeat with a wrong token is rejected", r.status_code == 401)
 
+        with app.app_context():
+            bench2 = LabPi.query.filter_by(node_id="bench-2").first()
+            bench2_token = bench2.api_token if bench2 else None
+
         r = c.get("/api/node/bench-1/sessions", headers=node_hdr)
         sessions = r.get_json()["sessions"]
         check("poller sees the live session", len(sessions) == 1)
         check("session carries who it belongs to", sessions[0]["user"] == "Asha Rao")
 
-        r = c.post("/api/node/session/validate", headers=hdr,
+        r = c.post("/api/node/session/validate", headers=node_hdr,
                    json={"session_key": key, "node_id": "bench-1"})
         check("node validates a good key", r.get_json()["valid"] is True)
 
-        r = c.post("/api/node/session/validate", headers=hdr,
-                   json={"session_key": "NOPE123456"})
+        r = c.post("/api/node/session/validate", headers=node_hdr,
+                   json={"session_key": "NOPE123456", "node_id": "bench-1"})
         check("node rejects an unknown key", r.status_code == 404)
 
-        r = c.post("/api/node/session/validate", headers=hdr,
+        r = c.post("/api/node/session/validate",
+                   headers={**hdr, "X-Node-Token": bench2_token},
                    json={"session_key": key, "node_id": "bench-2"})
-        check("key from another node is rejected", r.status_code == 403)
+        check("another node cannot validate this node's key", r.status_code == 403)
 
     print("\nSession expiry")
     with app.app_context():
@@ -341,7 +362,8 @@ def main():
         s.expires_at = utcnow() - timedelta(minutes=1)
         db.session.commit()
     with app.test_client() as c:
-        r = c.post("/api/node/session/validate", headers=hdr, json={"session_key": key})
+        r = c.post("/api/node/session/validate", headers=node_hdr,
+                   json={"session_key": key, "node_id": "bench-1"})
         check("expired key stops validating", r.status_code == 403)
         r = c.get("/api/node/bench-1/sessions", headers=node_hdr)
         check("expired session leaves the poll list", r.get_json()["sessions"] == [])

@@ -176,6 +176,12 @@ def node_sessions(node_id):
 def validate_session():
     """A browser arrived at the node with ?key=... - is it good?"""
     data = request.get_json(silent=True) or {}
+    # The fleet-wide secret is not enough here: it proves the caller is *a*
+    # node, not *this* node. Without the per-node token any holder of the
+    # shared secret could turn this endpoint into an oracle over every key.
+    node, err = _authenticated_node((data.get("node_id") or "").strip())
+    if err:
+        return err
     key = (data.get("session_key") or "").strip()
     s = Session.query.filter_by(session_key=key).first()
 
@@ -191,8 +197,7 @@ def validate_session():
         db.session.commit()
         return jsonify({"valid": False, "reason": "session has expired"}), 403
 
-    node_id = (data.get("node_id") or "").strip()
-    if node_id and s.node and s.node.node_id != node_id:
+    if s.lab_pi_id != node.id:
         return jsonify({"valid": False,
                         "reason": "this key belongs to a different node"}), 403
 
@@ -212,15 +217,22 @@ def validate_session():
 def end_session():
     """The node reporting that a session finished on its side."""
     data = request.get_json(silent=True) or {}
+    node, err = _authenticated_node((data.get("node_id") or "").strip())
+    if err:
+        return err
     s = Session.query.filter_by(session_key=(data.get("session_key") or "").strip()).first()
     if not s:
         return jsonify({"error": "unknown session key"}), 404
+    if s.lab_pi_id != node.id:
+        return jsonify({"error": "session does not belong to this node"}), 403
 
     s.status = "completed"
     s.ended_at = utcnow()
-    if s.booking:
-        s.booking.status = "completed"
-        s.booking.completed_at = utcnow()
-    SystemLog.write(f"Node reported session {s.session_key} finished", category="session")
+    # The booking is deliberately left alone. Marking it completed made
+    # Booking.can_start false, so a node-initiated end burned the student's
+    # slot permanently and needed an admin to undo. The slot stays
+    # restartable until its own end_time.
+    SystemLog.write(f"Node {node.node_id} reported session {s.session_key} finished",
+                    category="session")
     db.session.commit()
     return jsonify({"ok": True})
