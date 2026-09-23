@@ -100,9 +100,13 @@ python app.py             # students: http://localhost:5000/login
                           # admins:   http://localhost:5000/admin/login
 ```
 
-`python seed.py --demo` additionally creates three sample students (password
-`demo-password-123`), a node and a couple of bookings, which is useful for
-looking around before any real hardware is attached.
+`python seed.py --demo` additionally creates three sample students, a node and
+a couple of bookings, which is useful for looking around before any real
+hardware is attached. Each student gets its own random password, printed once
+when the command runs - write them down, they are not recoverable.
+
+Don't run `--demo` against a database that is already in real use: it adds
+accounts that no one is expecting to be there.
 
 For a server install with systemd and gunicorn, see `DEPLOY.md`.
 

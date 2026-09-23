@@ -131,16 +131,22 @@ def _seed_demo(course):
         ("Vikram Nair", "vikram.nair@example.edu", "EE21B002"),
         ("Priya Menon", "priya.menon@example.edu", "EE21B003"),
     ]
+    # One random password each, shown once, same as the admin account above.
+    # These were a single hardcoded string shared by all three and printed in
+    # the README, so every deployment that ever ran --demo had three known
+    # accounts on it - and nothing stops --demo being run against a database
+    # that is already in real use.
     created = []
     for name, email, roll in students:
         if User.query.filter_by(email=email).first():
             continue
         u = User(full_name=name, email=email, roll_number=roll,
                  must_change_password=True)
-        u.set_password("demo-password-123")
+        password = secrets.token_urlsafe(12)
+        u.set_password(password)
         u.courses = [course]
         db.session.add(u)
-        created.append(u)
+        created.append((u, password))
 
     if not LabPi.query.filter_by(node_id="lab-bench-1").first():
         exp = Experiment.query.filter_by(slug="temperature-humidity-monitoring").first()
@@ -153,13 +159,18 @@ def _seed_demo(course):
     if created:
         exp = Experiment.query.filter_by(slug="dc-motor-speed-control").first()
         base = utcnow().replace(minute=0, second=0, microsecond=0) + timedelta(hours=2)
-        for i, u in enumerate(created[:2]):
+        for i, (u, _pw) in enumerate(created[:2]):
             start = base + timedelta(hours=i)
             db.session.add(Booking(user_id=u.id, experiment_id=exp.id,
                                    start_time=start, end_time=start + timedelta(hours=1)))
         db.session.commit()
 
-    print("  Demo students created with password: demo-password-123")
+    if created:
+        print("\n  Demo students - each is asked to change this on first sign-in:")
+        for u, password in created:
+            print(f"    {u.email:30} {password}")
+        print("\n  These are shown once and are not recoverable. Re-run with a "
+              "fresh\n  database if you lose them.")
 
 
 if __name__ == "__main__":

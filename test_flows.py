@@ -229,6 +229,22 @@ def main():
           _appc.config.get("WTF_CSRF_TIME_LIMIT") is None,
           f"got {_appc.config.get('WTF_CSRF_TIME_LIMIT')}")
 
+    print("\nSeeded accounts have no shipped password")
+    _seed_src = Path("seed.py").read_text()
+    # F-28. The demo students all shared one hardcoded password that was also
+    # printed in the README, so any deployment that had ever run --demo
+    # carried three accounts with a publicly known password.
+    check("no password literal is compiled into the seeder",
+          not re.search(r"set_password\(\s*[\"']", _seed_src),
+          "a hardcoded password is still passed to set_password()")
+    check("the seeder generates demo passwords randomly",
+          "secrets.token_urlsafe" in _seed_src)
+    for _doc in ("README.md", "DEPLOY.md"):
+        _dp = Path(_doc)
+        if _dp.exists():
+            check(f"{_doc} publishes no demo password",
+                  "demo-password-123" not in _dp.read_text())
+
     print("\nStartup secret validation")
     from config import Config as _Cfg
 
