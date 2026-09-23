@@ -17,6 +17,8 @@ from models import (Booking, Course, Experiment, LabPi, Session, SystemLog,
 
 PASSES, FAILURES = [], []
 
+TEST_NODE_SECRET = "test-node-shared-secret-" + "x" * 32
+
 
 def check(name, condition, detail=""):
     (PASSES if condition else FAILURES).append(name)
@@ -28,8 +30,8 @@ def build_app(tmp):
         SQLALCHEMY_DATABASE_URI = f"sqlite:///{tmp}/t.db"
         TESTING = True
         WTF_CSRF_ENABLED = False
-        SECRET_KEY = "test"
-        NODE_SHARED_SECRET = "test-secret"
+        SECRET_KEY = "t" * 64
+        NODE_SHARED_SECRET = TEST_NODE_SECRET
         PORTAL_BASE_URL = "http://testserver"
         SOP_FOLDER = Path(tmp) / "sop"
         UPLOAD_FOLDER = Path(tmp) / "up"
@@ -82,8 +84,36 @@ def main():
     tmp = tempfile.mkdtemp()
     app = build_app(tmp)
     ids = seed(app)
-    hdr = {"X-Node-Secret": "test-secret"}
+    hdr = {"X-Node-Secret": TEST_NODE_SECRET}
     node_hdr = {**hdr, "X-Node-Token": "node-token"}
+
+    print("\nStartup secret validation")
+    from config import Config as _Cfg
+
+    class _BadSecret(_Cfg):
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{tmp}/bad.db"
+        TESTING = True
+        SECRET_KEY = "dev-only-change-me"
+        NODE_SHARED_SECRET = "n" * 40
+        SOP_FOLDER = Path(tmp) / "sop"
+        UPLOAD_FOLDER = Path(tmp) / "up"
+
+    class _ShortSecret(_BadSecret):
+        SECRET_KEY = "short"
+
+    class _BadNodeSecret(_BadSecret):
+        SECRET_KEY = "s" * 40
+        NODE_SHARED_SECRET = "change-this-node-secret"
+
+    for label, cfg in (("the shipped placeholder SECRET_KEY", _BadSecret),
+                       ("a too-short SECRET_KEY", _ShortSecret),
+                       ("the shipped placeholder NODE_SHARED_SECRET", _BadNodeSecret)):
+        refused = False
+        try:
+            create_app(cfg)
+        except RuntimeError:
+            refused = True
+        check(f"startup refuses {label}", refused)
 
     print("\nAuthentication")
     with app.test_client() as c:
@@ -526,7 +556,7 @@ def main():
 
         # X-Master-Api-Key is the header the deployed Pi actually sends.
         r = c.post("/api/lab-pi/heartbeat",
-                   headers={"X-Master-Api-Key": "test-secret"},
+                   headers={"X-Master-Api-Key": TEST_NODE_SECRET},
                    json={"lab_pi_id": "lab-real-1", "cpu_usage": 20})
         check("X-Master-Api-Key is accepted", r.status_code == 200)
         r = c.post("/api/lab-pi/heartbeat",

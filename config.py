@@ -14,7 +14,7 @@ def _bool(name, default=False):
 
 
 class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-change-me")
+    SECRET_KEY = os.environ.get("SECRET_KEY", "")
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL", f"sqlite:///{BASE_DIR / 'data' / 'portal.db'}"
     )
@@ -29,7 +29,7 @@ class Config:
     PORTAL_BASE_URL = os.environ.get("PORTAL_BASE_URL", "http://localhost:5000")
 
     # Shared secret every Lab Pi presents when registering / heart-beating.
-    NODE_SHARED_SECRET = os.environ.get("NODE_SHARED_SECRET", "change-this-node-secret")
+    NODE_SHARED_SECRET = os.environ.get("NODE_SHARED_SECRET", "")
     NODE_TIMEOUT = float(os.environ.get("NODE_TIMEOUT", "4"))
 
     # Accept Lab Pis that still use the older /api/lab-pi/... paths and send
@@ -82,3 +82,40 @@ class Config:
     LOGIN_LOCK_MINUTES = 15
     PASSWORD_CHANGE_MIN_MINUTES = 5
     REMEMBER_COOKIE_HTTPONLY = True
+
+
+# Values that must never protect a running instance. Anything here - or a
+# secret shorter than MIN_SECRET_LENGTH - stops the app at start-up rather
+# than letting it serve on a credential that is published in this repository.
+MIN_SECRET_LENGTH = 32
+
+_PLACEHOLDER_SECRETS = {
+    "",
+    "dev-only-change-me",
+    "change-this-node-secret",
+    "generate-with-python-c-import-secrets-print-secrets-token-hex-32",
+    "generate-another-long-random-string",
+}
+
+
+def validate_secrets(config, min_len=MIN_SECRET_LENGTH):
+    """Refuse to start on a missing, placeholder or too-short secret.
+
+    Nothing in this project calls load_dotenv(); the values arrive from
+    systemd's EnvironmentFile. A process started outside the unit - a manual
+    `python app.py`, a container without the env file - therefore used to come
+    up happily on the shipped defaults, with no warning. It now fails loudly.
+    """
+    problems = []
+    for name in ("SECRET_KEY", "NODE_SHARED_SECRET"):
+        value = config.get(name) or ""
+        if value in _PLACEHOLDER_SECRETS:
+            problems.append(f"{name} is unset or still the shipped placeholder")
+        elif len(value) < min_len:
+            problems.append(
+                f"{name} is {len(value)} characters; at least {min_len} are required")
+    if problems:
+        raise RuntimeError(
+            "Refusing to start:\n  - " + "\n  - ".join(problems)
+            + "\n\nGenerate one with: "
+              "python -c 'import secrets; print(secrets.token_hex(32))'")

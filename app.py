@@ -11,7 +11,7 @@ from flask import Flask, flash, redirect, render_template, request, url_for
 from flask_login import LoginManager
 from flask_socketio import SocketIO
 
-from config import BASE_DIR, Config
+from config import BASE_DIR, Config, validate_secrets
 from models import User, db, utcnow
 from services import timeutil
 from services.audio_relay import AudioRelayManager
@@ -47,6 +47,7 @@ def load_user(user_id):
 def create_app(config_object=Config):
     app = Flask(__name__)
     app.config.from_object(config_object)
+    validate_secrets(app.config)
 
     for folder in (BASE_DIR / "data", app.config["UPLOAD_FOLDER"],
                    app.config["SOP_FOLDER"]):
@@ -217,9 +218,12 @@ def create_app(config_object=Config):
     return app
 
 
-app = create_app()
-
 if __name__ == "__main__":
+    # Built here rather than at module import, so that importing app.py
+    # (manage.py, seed.py, tests) does not construct an application - and
+    # so a missing environment fails the process that actually serves.
+    app = create_app()
+
     # socketio.run, not app.run: the lab page's serial/chart/oscilloscope
     # relay needs the SocketIO server actually serving, not just Flask's.
     socketio.run(app, host=os.environ.get("HOST", "0.0.0.0"),
