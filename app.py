@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 
 from flask import Flask, flash, redirect, render_template, request, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager
 from flask_socketio import SocketIO
 
@@ -48,6 +49,13 @@ def create_app(config_object=Config):
     app = Flask(__name__)
     app.config.from_object(config_object)
     validate_secrets(app.config)
+
+    # nginx terminates TLS and proxies to this app, so without this the
+    # request looks like plain HTTP from 127.0.0.1: HSTS never fires and,
+    # more importantly, request.remote_addr becomes the proxy rather than
+    # the caller - which services/netguard.py trusts as the fallback node
+    # address. One proxy hop; raise these if you add another.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     for folder in (BASE_DIR / "data", app.config["UPLOAD_FOLDER"],
                    app.config["SOP_FOLDER"]):

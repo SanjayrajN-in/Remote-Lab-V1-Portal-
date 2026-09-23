@@ -12,6 +12,31 @@ considered compromised. On the server:
 passwd                          # pick something long
 ```
 
+> **Upgrading an existing install: the app now binds to 127.0.0.1.**
+>
+> Gunicorn used to listen on `0.0.0.0`, so the Lab Pis could reach the app
+> port directly across the LAN - which also meant anyone else on the LAN
+> could, over plain HTTP, with the shared secret travelling in a header.
+> The unit now binds to loopback and nginx is the only listener.
+>
+> That changes how the nodes reach the master, so apply it in this order or
+> the benches will go offline:
+>
+> 1. Deploy the application code first. It includes `ProxyFix`, without which
+>    every proxied request appears to come from `127.0.0.1` - and that address
+>    would then be written into `LabPi.ip_address` as the fallback, pointing
+>    the portal at itself.
+> 2. Repoint each Pi's `MASTER_URL` at the public URL
+>    (`https://<portal-host>`), not `http://<portal-host>:5001`. Restart the
+>    node service - editing its config is not enough, the running process
+>    keeps the old value.
+> 3. Confirm all benches heartbeat 200 while the app is still listening on
+>    `0.0.0.0`.
+> 4. Only then switch the unit to `--bind 127.0.0.1:__PORT__` and restart.
+>
+> Node traffic then goes over TLS as well, so the shared secret stops
+> crossing the laboratory network in clear text.
+
 Better still, switch to key-based login and turn password authentication off:
 
 ```bash

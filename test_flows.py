@@ -107,6 +107,25 @@ def main():
               r.headers.get("Location", "").endswith("/my-bookings"),
               r.headers.get("Location", ""))
 
+    print("\nReverse proxy handling")
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    def _has_proxyfix(obj, depth=6):
+        for _ in range(depth):
+            if isinstance(obj, ProxyFix):
+                return True
+            obj = getattr(obj, "wsgi_app", None) or getattr(obj, "app", None)
+            if obj is None:
+                return False
+        return False
+    check("ProxyFix is in the WSGI chain so X-Forwarded-* is honoured",
+          _has_proxyfix(app.wsgi_app), type(app.wsgi_app).__name__)
+    with app.test_client() as c:
+        r = c.get("/login", headers={"X-Forwarded-Proto": "https"})
+        check("HSTS is emitted for a proxied HTTPS request",
+              "Strict-Transport-Security" in r.headers)
+    check("the shipped unit binds to loopback, not every interface",
+          "--bind 127.0.0.1:" in open("install/remote-lab-portal.service").read())
+
     print("\nStartup secret validation")
     from config import Config as _Cfg
 

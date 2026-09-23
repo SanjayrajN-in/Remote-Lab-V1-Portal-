@@ -17,7 +17,7 @@ ExecStart=__APP_DIR__/venv/bin/gunicorn \
     --workers 1 \
     --threads 12 \
     --timeout 120 \
-    --bind 0.0.0.0:__PORT__ \
+    --bind 127.0.0.1:__PORT__ \
     --access-logfile - \
     --error-logfile - \
     wsgi:application
