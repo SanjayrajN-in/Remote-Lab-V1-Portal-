@@ -732,6 +732,28 @@ def main():
         check("with compat ON and a valid secret, the legacy path still works",
               r.status_code == 200, f"got {r.status_code}")
 
+    print("\nNode address precedence")
+    with app.app_context():
+        _keep = LabPi.query.filter_by(node_id="bench-1").first().ip_address
+    with app.test_client() as c:
+        c.post("/api/lab-pi/heartbeat", headers=hdr,
+               json={"lab_pi_id": "bench-1", "ip": "192.168.1.5", "cpu": 1},
+               environ_base={"REMOTE_ADDR": "10.0.0.77"})
+        with app.app_context():
+            n = LabPi.query.filter_by(node_id="bench-1").first()
+            check("the observed peer address beats a self-reported one",
+                  n.ip_address == "10.0.0.77", f"ip_address={n.ip_address}")
+        c.post("/api/lab-pi/register", headers=hdr,
+               json={"lab_pi_id": "bench-1", "ip": "10.0.0.99"},
+               environ_base={"REMOTE_ADDR": "10.0.0.77"})
+        with app.app_context():
+            n = LabPi.query.filter_by(node_id="bench-1").first()
+            check("register does not let a node relocate itself either",
+                  n.ip_address == "10.0.0.77", f"ip_address={n.ip_address}")
+    with app.app_context():
+        LabPi.query.filter_by(node_id="bench-1").first().ip_address = _keep
+        db.session.commit()
+
     print("\nNode address validation")
     with app.test_client() as c:
         with app.app_context():

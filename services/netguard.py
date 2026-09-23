@@ -73,3 +73,27 @@ def safe_address(candidate, fallback=None, context=""):
     except UnsafeNodeAddress as e:
         log.warning("Refused node address%s: %s", f" for {context}" if context else "", e)
         return fallback
+
+
+def preferred_node_address(reported, peer, existing=None, context=""):
+    """The address the portal should dial for this node.
+
+    The peer address wins. It is where the node's packets actually arrive
+    from, so by construction the portal can reach it back; a self-reported
+    value is a claim about an interface the node happens to prefer, which
+    may be on a different network entirely.
+
+    This was originally the other way round - validated self-report first,
+    peer address only as a fallback - and it bit immediately: after a node's
+    MASTER_URL was repointed at the public hostname, the node recomputed its
+    own address from the route to the new master and reported a 192.168.x
+    interface. That passed validation, overwrote a working entry, and left
+    the portal dialling an address it could not reach.
+
+    A self-reported value is consulted only when the peer address is not
+    usable - behind a proxy that strips forwarding headers, for instance.
+    """
+    return (safe_address(peer, context=context)
+            or safe_address(reported, context=context)
+            or existing
+            or peer)

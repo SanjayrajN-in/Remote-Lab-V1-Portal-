@@ -20,7 +20,7 @@ from flask import Blueprint, current_app, jsonify, request
 
 from models import (Booking, Experiment, LabPi, LabPiHeartbeat, Session,
                     SystemLog, db, utcnow)
-from services.netguard import safe_address
+from services.netguard import preferred_node_address
 
 bp = Blueprint("node_api", __name__, url_prefix="/api/node")
 
@@ -65,9 +65,8 @@ def register():
     if not node_id:
         return jsonify({"error": "node_id is required"}), 400
 
-    ip = safe_address(data.get("ip"),
-                      fallback=request.remote_addr,
-                      context=f"node {node_id} register")
+    ip = preferred_node_address(data.get("ip"), request.remote_addr,
+                                context=f"node {node_id} register")
     if ip is None:
         return jsonify({"error": "no usable node address; check LAB_NODE_CIDRS"}), 400
 
@@ -119,9 +118,9 @@ def heartbeat():
         return err
 
     node.last_seen = utcnow()
-    if data.get("ip") and data["ip"] != node.ip_address:
-        node.ip_address = safe_address(data["ip"], fallback=node.ip_address,
-                                       context=f"node {node.node_id} heartbeat")
+    node.ip_address = preferred_node_address(
+        data.get("ip"), request.remote_addr, existing=node.ip_address,
+        context=f"node {node.node_id} heartbeat")
 
     db.session.add(LabPiHeartbeat(
         lab_pi_id=node.id,
