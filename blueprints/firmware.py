@@ -16,6 +16,7 @@ import logging
 from pathlib import Path
 
 from flask import Blueprint, current_app, jsonify, request
+from flask_login import current_user
 from werkzeug.utils import secure_filename
 
 from models import FirmwareUpload, Session, SystemLog, db, utcnow
@@ -31,9 +32,24 @@ def _firmware_dir():
     return d
 
 
-def _live_session(key):
+MAX_FIRMWARE_BYTES = 8 * 1024 * 1024
+
+
+def _owned_live_session(key):
+    """A live session that belongs to the signed-in user.
+
+    The module docstring above always claimed this ("one student cannot flash
+    another's bench"), but the check was never written: the previous helper
+    returned any live Session by key, so possession of the key alone was
+    sufficient - for anyone, authenticated or not. Mirrors
+    portal._owned_live_session(), which had it right all along.
+    """
+    if not current_user.is_authenticated:
+        return None
     s = Session.query.filter_by(session_key=key).first()
     if not s or not s.is_live:
+        return None
+    if s.user_id != current_user.id and not current_user.is_admin:
         return None
     return s
 
@@ -41,10 +57,14 @@ def _live_session(key):
 @bp.post("/session/<key>/firmware")
 def upload(key):
     """Accept a firmware file for a live session and forward it to the bench."""
-    session = _live_session(key)
+    session = _owned_live_session(key)
     if not session:
+        SystemLog.write(f"Refused firmware upload for session key {key[:4]}***",
+                        level="warning", category="firmware",
+                        user_id=getattr(current_user, "id", None))
+        db.session.commit()
         return jsonify({"status": "error",
-                        "message": "This session has ended or the link is invalid."}), 403
+                        "message": "This session has ended, or it is not yours."}), 403
 
     fw = request.files.get("firmware") or request.files.get("file")
     if not fw or not fw.filename:
@@ -54,7 +74,13 @@ def upload(key):
              or (session.node.board if session.node else None)
              or "generic")
 
-    data = fw.read()
+    # Bounded read. MAX_CONTENT_LENGTH is 32 MB but firmware is capped at 8 MB,
+    # so an unbounded read() buffered four times the allowed size in memory
+    # before validate() ever got to reject it - on a single-worker deployment.
+    data = fw.read(MAX_FIRMWARE_BYTES + 1)
+    if len(data) > MAX_FIRMWARE_BYTES:
+        return jsonify({"status": "rejected",
+                        "message": "Firmware images must be 8 MB or smaller."}), 413
     record = FirmwareUpload(
         session_id=session.id, user_id=session.user_id,
         lab_pi_id=session.lab_pi_id, original_name=fw.filename,

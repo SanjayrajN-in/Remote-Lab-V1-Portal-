@@ -272,6 +272,31 @@ def main():
         r = c.get(f"/booking/{code}/start")
         check("another student cannot start your booking", r.status_code == 404)
 
+    print("\nFirmware upload authorisation")
+
+    def _fw():
+        return {"firmware": (io.BytesIO(b":100000000C9434000C943E000C943E000C943E00A8\n:00000001FF\n"), "blink.hex"), "board": "arduino"}
+
+    with app.test_client() as c:
+        r = c.post(f"/session/{key}/firmware", data=_fw(),
+                   content_type="multipart/form-data")
+        check("unauthenticated firmware upload is refused",
+              r.status_code in (401, 403), f"got {r.status_code}")
+    with app.test_client() as c:
+        login(c, "vik@t.edu", "otherpass1")
+        r = c.post(f"/session/{key}/firmware", data=_fw(),
+                   content_type="multipart/form-data")
+        check("another student cannot flash your bench",
+              r.status_code == 403, f"got {r.status_code}")
+    with app.test_client() as c:
+        login(c, "asha@t.edu", "studentpass1")
+        with mock.patch("services.nodes.flash") as fl:
+            fl.return_value = (True, "flashed")
+            r = c.post(f"/session/{key}/firmware", data=_fw(),
+                       content_type="multipart/form-data")
+        check("the owning student can still flash",
+              r.status_code == 200, f"got {r.status_code} {r.data[:120]}")
+
     print("\nNode API")
     with app.test_client() as c:
         r = c.post("/api/node/register", json={"node_id": "bench-2", "name": "Bench 2",
@@ -701,6 +726,8 @@ def main():
         live_key = sess.session_key; sess_id = sess.id; nb_code = nb.code
 
     with app.test_client() as c:
+        # Firmware upload now requires the session's owner to be signed in.
+        login(c, "asha@t.edu", "studentpass1")
         r = c.post("/session/NOTAKEY/firmware",
                    data={"firmware": (_io.BytesIO(good_hex), "blink.hex")},
                    content_type="multipart/form-data")
