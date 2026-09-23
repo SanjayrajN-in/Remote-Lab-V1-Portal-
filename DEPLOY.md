@@ -68,6 +68,39 @@ passwd                          # pick something long
 > `ProtectHome=read-only` rather than `true` because the application currently
 > lives under `/home`. Move it to `/opt` and that can be tightened.
 
+> **If serial, the plotter, the oscilloscope or the debugger do not work
+> behind nginx, the proxy is missing WebSocket support.**
+>
+> The symptom is misleading: the lab page loads, the camera streams, the
+> countdown runs - but every instrument panel is dead and the browser console
+> repeats `WebSocket connection to 'wss://.../socket.io/' failed`. The access
+> log shows `"GET /socket.io/?...transport=websocket HTTP/1.0" 400`. The
+> `HTTP/1.0` is the tell: nginx proxies at 1.0 by default, which cannot carry
+> an upgrade, so the handshake never completes.
+>
+> Add to the `http` context, e.g. `/etc/nginx/conf.d/websocket-upgrade.conf`:
+>
+> ```nginx
+> map $http_upgrade $connection_upgrade {
+>     default upgrade;
+>     ''      close;
+> }
+> ```
+>
+> and inside `location /`:
+>
+> ```nginx
+> proxy_http_version 1.1;
+> proxy_set_header Upgrade    $http_upgrade;
+> proxy_set_header Connection $connection_upgrade;
+> proxy_read_timeout 3600s;   # a session is an hour; the 60s default drops it
+> proxy_send_timeout 3600s;
+> proxy_buffering off;        # MJPEG and the relay are streams
+> ```
+>
+> Then `sudo nginx -t && sudo systemctl reload nginx`. A full worked example
+> is in `install/nginx-rle.conf.example`.
+
 Better still, switch to key-based login and turn password authentication off:
 
 ```bash
