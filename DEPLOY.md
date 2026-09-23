@@ -5,8 +5,8 @@ steps to run yourself. They take about five minutes.
 
 ## Before you start
 
-**Change that password.** the initial password was shared out-of-band and is now in a log
-somewhere. On the server:
+**Change that password.** The initial password was shared out-of-band and must be
+considered compromised. On the server:
 
 ```bash
 passwd                          # pick something long
