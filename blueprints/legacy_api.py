@@ -18,12 +18,10 @@ firmware that is already deployed and cannot be assumed:
 The first payload from each node is logged in full at INFO, so you can see
 exactly what your hardware sends and tighten this up later.
 
-Security note: `LEGACY_NODE_COMPAT` defaults to on because the alternative is
-your lab not working. It accepts unauthenticated heartbeats from anything that
-can reach the port. On a closed lab network that is a reasonable trade; on a
-routable one it is not. Once the nodes run `install/node_integration.py` and
-present `X-Node-Secret`, set `LEGACY_NODE_COMPAT=false` and this whole
-blueprint stops accepting anonymous traffic.
+Security note: every endpoint here requires the shared secret, presented as
+either `X-Master-Api-Key` or `X-Node-Secret`. `LEGACY_NODE_COMPAT` controls
+only whether these older *paths* are served at all; it has never been able to
+waive authentication since the F-01 fix, and it now defaults to off.
 """
 import hmac
 import logging
@@ -67,7 +65,10 @@ def _allowed():
         given = request.headers.get(header)
         if given:
             return hmac.compare_digest(given, secret)
-    return bool(current_app.config.get("LEGACY_NODE_COMPAT", True))
+    # No anonymous fallback, ever. This used to return LEGACY_NODE_COMPAT,
+    # which defaulted to True - so a missing header authenticated the caller
+    # and every endpoint below was open to anyone who could reach the port.
+    return False
 
 
 def _identify(data):
@@ -139,8 +140,12 @@ def register():
             node.experiment_id = exp.id
 
     db.session.commit()
+    # api_token is deliberately not returned. Echoing it here let anyone who
+    # could reach this endpoint read any node's per-node credential just by
+    # naming it. Legacy nodes authenticate with the shared secret and never
+    # used this value; new nodes get theirs from /api/node/register.
     return jsonify({"ok": True, "status": "registered", "node_id": node.node_id,
-                    "api_token": node.api_token, "heartbeat_seconds": 30})
+                    "heartbeat_seconds": 30})
 
 
 @bp.post("/heartbeat")

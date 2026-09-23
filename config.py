@@ -32,10 +32,12 @@ class Config:
     NODE_SHARED_SECRET = os.environ.get("NODE_SHARED_SECRET", "")
     NODE_TIMEOUT = float(os.environ.get("NODE_TIMEOUT", "4"))
 
-    # Accept Lab Pis that still use the older /api/lab-pi/... paths and send
-    # no shared secret. On by default so existing hardware keeps working;
-    # turn it off once every node runs install/node_integration.py.
-    LEGACY_NODE_COMPAT = _bool("LEGACY_NODE_COMPAT", True)
+    # Accept Lab Pis that still use the older /api/lab-pi/... paths. This only
+    # ever relaxed *which path* a node may use - it never removed the need for
+    # a shared secret, and as of the F-01 fix an absent header is refused
+    # whatever this is set to. Off by default: a deployment that loses its
+    # environment file must not silently widen its own attack surface.
+    LEGACY_NODE_COMPAT = _bool("LEGACY_NODE_COMPAT", False)
 
     # The lab page proxies serial/chart/oscilloscope/camera/audio through the
     # portal instead of sending the browser to the node's own address (see

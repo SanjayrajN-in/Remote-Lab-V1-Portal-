@@ -88,14 +88,20 @@ def register():
                     category="device")
     db.session.commit()
 
-    return jsonify({
+    body = {
         "ok": True,
         "created": created,
         "node_id": node.node_id,
-        "api_token": node.api_token,   # the node stores this for later calls
         "experiment": node.experiment.slug if node.experiment else None,
         "heartbeat_seconds": 30,
-    })
+    }
+    if created:
+        # Only on genuine first registration. Returning it on every re-register
+        # meant one shared secret could read every node's own token, defeating
+        # the point of having a per-node credential at all. An existing node
+        # that has lost its token needs one reissued from the admin console.
+        body["api_token"] = node.api_token
+    return jsonify(body)
 
 
 @bp.post("/heartbeat")

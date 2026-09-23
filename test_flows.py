@@ -496,11 +496,32 @@ def main():
         r = c.get(f"/admin/users/{uid}")
         check("user detail shows booking history", code.encode() in r.data)
 
+    print("\nLegacy compatibility is off by default")
+    from config import Config as _DefaultCfg
+    check("LEGACY_NODE_COMPAT defaults to off", _DefaultCfg.LEGACY_NODE_COMPAT is False)
+    with app.test_client() as c:
+        r = c.post("/api/lab-pi/heartbeat", json={"node_id": "anon-1", "cpu": 1})
+        check("anonymous legacy heartbeat is refused by default",
+              r.status_code == 401, f"got {r.status_code}")
+        r = c.post("/api/lab-pi/register", json={"lab_pi_id": "anon-1"})
+        check("anonymous legacy register is refused by default",
+              r.status_code == 401, f"got {r.status_code}")
+        r = c.post("/api/lab-pi/register", headers=hdr,
+                   json={"lab_pi_id": "bench-1"})
+        check("authenticated legacy register no longer echoes api_token",
+              r.status_code == 200 and "api_token" not in (r.get_json() or {}))
+    with app.test_client() as c:
+        r = c.post("/api/node/register", headers=hdr, json={"node_id": "bench-1"})
+        body = r.get_json() or {}
+        check("re-registering a known node does not echo its api_token",
+              r.status_code == 200 and "api_token" not in body,
+              f"got {sorted(body)}")
+
     print("\nLegacy /api/lab-pi compatibility")
     with app.test_client() as c:
         # An unknown Pi heartbeating with no secret, exactly as existing
         # hardware does. It must be accepted and registered, not 404'd.
-        r = c.post("/api/lab-pi/heartbeat", json={
+        r = c.post("/api/lab-pi/heartbeat", headers=hdr, json={
             "node_id": "lab-legacy-1", "cpu": 22.5, "ram": 44.0,
             "temp": 47.1, "uptime": 3600})
         check("legacy heartbeat is accepted", r.status_code == 200, str(r.status_code))
@@ -512,7 +533,7 @@ def main():
                   n.latest is not None and n.latest.cpu_percent == 22.5)
 
         # Alternative field spellings from older firmware.
-        r = c.post("/api/lab-pi/heartbeat", json={
+        r = c.post("/api/lab-pi/heartbeat", headers=hdr, json={
             "lab_pi_id": "lab-legacy-2", "cpu_usage": 60, "memory": 30,
             "cpu_temp": 55.5, "battery": 74, "power_source": "battery"})
         check("alternative field names are understood", r.status_code == 200)
@@ -521,7 +542,7 @@ def main():
             check("cpu_usage maps to cpu", n2.latest.cpu_percent == 60)
             check("battery state is normalised", n2.latest.battery_status == "Battery")
 
-        r = c.post("/api/lab-pi/register", json={
+        r = c.post("/api/lab-pi/register", headers=hdr, json={
             "node_id": "lab-legacy-1", "name": "Bench Legacy",
             "experiment_slug": "dc-motor", "board": "esp32"})
         check("legacy register works", r.status_code == 200)
@@ -529,15 +550,15 @@ def main():
             n = LabPi.query.filter_by(node_id="lab-legacy-1").first()
             check("legacy register links the experiment", n.experiment.slug == "dc-motor")
 
-        r = c.get("/api/lab-pi/lab-legacy-1/sessions")
+        r = c.get("/api/lab-pi/lab-legacy-1/sessions", headers=hdr)
         check("legacy session poll works", r.status_code == 200)
-        r = c.get("/api/lab-pi/never-heard-of-it/sessions")
+        r = c.get("/api/lab-pi/never-heard-of-it/sessions", headers=hdr)
         check("unknown node polling gets an empty list, not an error",
               r.status_code == 200 and r.get_json()["sessions"] == [])
 
         # The exact payload remote_lab_pi sends today.
         r = c.post("/api/lab-pi/heartbeat",
-                   headers={"X-Lab-Pi-Id": "lab-real-1"},
+                   headers={**hdr, "X-Lab-Pi-Id": "lab-real-1"},
                    json={"lab_pi_id": "lab-real-1", "name": "Lab Pi amar",
                          "ip_address": "<bench-1>", "mac_address": "b8:27:eb:01",
                          "status": "ONLINE", "session_active": False,
@@ -565,10 +586,10 @@ def main():
         check("a wrong X-Master-Api-Key is refused", r.status_code == 401)
 
         # The poller's real endpoint.
-        r = c.get("/api/lab-pi/lab-real-1/active-session")
+        r = c.get("/api/lab-pi/lab-real-1/active-session", headers=hdr)
         check("active-session answers", r.status_code == 200)
         check("no session reads as stopped", r.get_json()["status"] == "stopped")
-        r = c.get("/api/lab-pi/not-registered/active-session")
+        r = c.get("/api/lab-pi/not-registered/active-session", headers=hdr)
         check("an unknown node gets 404 so the poller can say so",
               r.status_code == 404)
 
@@ -577,15 +598,18 @@ def main():
                    json={"node_id": "lab-legacy-1", "cpu": 1})
         check("a wrong secret is refused even in compat mode", r.status_code == 401)
 
-    print("\nLegacy compatibility can be switched off")
+    print("\nLEGACY_NODE_COMPAT cannot waive authentication")
     tmp2 = tempfile.mkdtemp()
-    class NoCompat(build_app(tmp2).config.__class__):
-        pass
     app2 = build_app(tmp2)
-    app2.config["LEGACY_NODE_COMPAT"] = False
+    app2.config["LEGACY_NODE_COMPAT"] = True
     with app2.test_client() as c:
         r = c.post("/api/lab-pi/heartbeat", json={"node_id": "x", "cpu": 1})
-        check("with compat off, an unauthenticated node is refused", r.status_code == 401)
+        check("even with compat explicitly ON, an unauthenticated node is refused",
+              r.status_code == 401, f"got {r.status_code}")
+        r = c.post("/api/lab-pi/heartbeat", headers=hdr,
+                   json={"node_id": "x", "cpu": 1})
+        check("with compat ON and a valid secret, the legacy path still works",
+              r.status_code == 200, f"got {r.status_code}")
 
     print("\nAdmin sign-in is separate and role-checked")
     with app.test_client() as c:
