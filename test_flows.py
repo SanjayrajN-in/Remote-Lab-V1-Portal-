@@ -28,6 +28,9 @@ def check(name, condition, detail=""):
 def build_app(tmp):
     class T(Config):
         SQLALCHEMY_DATABASE_URI = f"sqlite:///{tmp}/t.db"
+        # The login limit (5/min) is real protection, but this suite signs in
+        # dozens of times in a few seconds and would be locked out.
+        RATELIMIT_ENABLED = False
         TESTING = True
         WTF_CSRF_ENABLED = False
         SECRET_KEY = "t" * 64
@@ -415,8 +418,16 @@ def main():
         check("round trip is lossless", timeutil.from_local(
               timeutil.to_local(stored).replace(tzinfo=None)) == stored)
 
+    with app.app_context():
+        # A fresh student: Asha already holds a DC motor booking from above,
+        # and one live booking per experiment is enforced.
+        late_user = User(full_name="Late Owl", email="owl@t.edu")
+        late_user.set_password("owlpass123")
+        late_user.courses = list(User.query.filter_by(email="asha@t.edu").first().courses)
+        db.session.add(late_user)
+        db.session.commit()
     with app.test_client() as c:
-        login(c, "asha@t.edu", "studentpass1")
+        login(c, "owl@t.edu", "owlpass123")
         # Book 23:00 IST tomorrow: stored as 17:30 UTC the same day.
         tomorrow = timeutil.local_today() + timedelta(days=1)
         late = tomorrow.strftime("%Y-%m-%dT23:00")
@@ -425,7 +436,7 @@ def main():
         check("a late-evening IST slot books", b"Booking confirmed" in r.data)
         with app.app_context():
             b = (Booking.query.filter(Booking.user_id ==
-                 User.query.filter_by(email="asha@t.edu").first().id)
+                 User.query.filter_by(email="owl@t.edu").first().id)
                  .order_by(Booking.id.desc()).first())
             check("23:00 IST is stored as 17:30 UTC",
                   b.start_time.hour == 17 and b.start_time.minute == 30,
@@ -750,7 +761,11 @@ def main():
                               "student_visible": True, "auto_connect": False,
                               "allow_disconnect": True, "is_primary_target": True}],
             "required_controls": [{"id": "c1", "type": "slider", "label": "Speed", "portId": "p1",
-                                   "min": 0, "max": 255, "precision": 0, "cmdFormat": "{value}"}],
+                                   "min": 0, "max": 255, "precision": 0, "cmdFormat": "{value}"},
+                                  {"id": "c2", "type": "button", "label": "Jog", "portId": "p1",
+                                   "buttonMode": "momentary", "pressCmd": "J1", "releaseCmd": "J0"},
+                                  {"id": "c3", "type": "button", "label": "Lamp", "portId": "p1",
+                                   "onCmd": "L1", "offCmd": "L0"}],
             "experiment_name": "DC Motor Speed Control",
             "available_ports": [], "osc_available_ports": [],
         }
@@ -762,6 +777,20 @@ def main():
         check("UI settings page renders for an online node", r.status_code == 200)
         check("shows the node's serial port profile", b"Student MCU" in r.data)
         check("shows the node's required dynamic control", b"Speed" in r.data)
+        check("a push button is labelled as one", b"button, push button" in r.data)
+        check("a button without a mode is shown as a switch", b"button, switch" in r.data)
+        check("a push button's edit form has its press/release commands",
+              b'name="rc_press_cmd" value="J1"' in r.data and b'name="rc_release_cmd" value="J0"' in r.data)
+        check("a push button's edit form has Push button selected",
+              b'<option value="momentary" selected>' in r.data)
+
+        from blueprints.admin import _control_to_rc_form
+        push_form = _control_to_rc_form(cfg["required_controls"][1])
+        check("copy-to keeps a push button's mode and commands",
+              push_form["rc_button_mode"] == "momentary"
+              and push_form["rc_press_cmd"] == "J1" and push_form["rc_release_cmd"] == "J0")
+        check("copy-to treats a button with no mode as a switch",
+              _control_to_rc_form(cfg["required_controls"][2])["rc_button_mode"] == "toggle")
         check("save button targets the same node", str(ids["node"]).encode() in r.data)
 
         with mock.patch("services.nodes.requests.request") as req:
@@ -796,6 +825,94 @@ def main():
               r.status_code == 200 and b"saved and pushed" in r.data)
         check("save builds controls from the checked boxes",
               posted_body["controls"] == {"board_select": True, "flash_firmware": False})
+
+        print("\nAdmin: serial settings section")
+        with mock.patch("services.nodes.requests.request") as req:
+            req.return_value.status_code = 200
+            req.return_value.raise_for_status = lambda: None
+            req.return_value.json = lambda: cfg
+            r = c.get(f"/admin/lab-pi/{ids['node']}/ui-settings")
+        page = r.data.decode()
+        student_card = page.split('<h3>Student controls</h3>', 1)[1].split('</form>', 1)[0]
+        check("serial switches are not in the generic Student controls list",
+              "control_serial_connect" not in student_card and "control_serial_plotter" not in student_card)
+        check("serial switches sit in the Serial section and still save with the main form",
+              'name="control_serial_connect" form="mainSettingsForm"' in page
+              and 'name="control_serial_monitor_section" form="mainSettingsForm"' in page)
+        check("primary target is one choice, not a checkbox per port",
+              'name="primary_port_id" form="mainSettingsForm"' in page
+              and 'type="checkbox" name="sp_is_primary_target"' not in page)
+        check("editing the primary port keeps it primary",
+              '<input type="hidden" name="sp_is_primary_target" value="on">' in page)
+        check("the default plotter port can be left to the first visible port",
+              '<option value="">(first visible port)</option>' in page)
+        check("baud is labelled as a default students can change", "Default baud" in page)
+        check("contradictory settings are called out",
+              "will never connect" in page and "Serial connect is off" in page)
+
+        two_ports = dict(cfg, serial_ports=[
+            dict(cfg["serial_ports"][0]),
+            {"id": "p2", "label": "Teacher MCU", "port": "/dev/serial/by-id/x", "baud": 9600,
+             "student_visible": False, "auto_connect": True, "allow_disconnect": False,
+             "is_primary_target": False},
+        ])
+        with mock.patch("services.nodes.requests.request") as req:
+            req.return_value.status_code = 200
+            req.return_value.raise_for_status = lambda: None
+            req.return_value.json = lambda: two_ports
+            c.post(f"/admin/lab-pi/{ids['node']}/ui-settings",
+                   data={"all_control_keys": "serial_connect", "main_view": "plotter",
+                         "primary_port_id": "p2"})
+            puts = {call.args[1].rsplit("/", 1)[-1]: call.kwargs["json"]
+                    for call in req.call_args_list if call.args[0] == "PUT"}
+        check("choosing a new primary target moves the flag to exactly that port",
+              set(puts) == {"p1", "p2"}
+              and "sp_is_primary_target" not in puts["p1"]
+              and puts["p2"].get("sp_is_primary_target") == "on")
+        check("moving the primary flag keeps the port's other settings",
+              puts["p2"]["sp_label"] == "Teacher MCU" and puts["p2"]["sp_baud"] == 9600
+              and puts["p2"].get("sp_auto_connect") == "on"
+              and "sp_student_visible" not in puts["p2"])
+
+        with mock.patch("services.nodes.requests.request") as req:
+            req.return_value.status_code = 200
+            req.return_value.raise_for_status = lambda: None
+            req.return_value.json = lambda: dict(cfg, serial_ports=[])
+            c.post(f"/admin/lab-pi/{ids['node']}/ui-settings/ports/add",
+                   data={"sp_label": "Only MCU", "sp_baud": "115200"})
+            added = [call.kwargs["json"] for call in req.call_args_list if call.args[0] == "POST"]
+        check("the first port added becomes the primary target",
+              added and added[0].get("sp_is_primary_target") == "on")
+
+    print("\nSerial settings rules")
+    from services import serial_policy as sp
+    hidden_no_path = {"id": "h", "label": "Hidden", "port": "", "student_visible": False,
+                      "auto_connect": True, "is_primary_target": True}
+    check("a hidden port with no fixed path is flagged",
+          any("Hidden" in m for m in sp.problems({"controls": {"serial_connect": True},
+                                                  "serial_ports": [hidden_no_path]})))
+    fixed_auto = {"id": "a", "label": "Auto", "port": "/dev/x", "student_visible": False,
+                  "auto_connect": True, "is_primary_target": True}
+    check("a hidden fixed-path auto-connect port is fine",
+          sp.problems({"controls": {}, "serial_ports": [fixed_auto],
+                       "defaults": {"main_view": "oscilloscope"}}) == [])
+    check("two primary targets are flagged",
+          any("More than one" in m for m in sp.problems({"controls": {}, "serial_ports": [
+              fixed_auto, dict(fixed_auto, id="b", label="B")]})))
+    check("a default view that's switched off is flagged",
+          any("Default view" in m for m in sp.problems({
+              "controls": {"serial_plotter": False, "oscilloscope": True},
+              "defaults": {"main_view": "plotter"}})))
+    check("serial connect off blocks connect/disconnect/reset",
+          all(sp.blocked_reason(e, {}, {"controls": {"serial_connect": False}})
+              for e in sp.SERIAL_CONNECT_EVENTS))
+    check("serial connect off never blocks slider/button commands",
+          sp.blocked_reason("send_command", {}, {"controls": {}}) is None)
+    locked = {"controls": {"serial_connect": True},
+              "serial_ports": [{"id": "p1", "allow_disconnect": False}]}
+    check("a disconnect-locked port can't be disconnected",
+          sp.blocked_reason("disconnect_serial", {"conn_id": "p1"}, locked) is not None
+          and sp.blocked_reason("connect_serial", {"conn_id": "p1"}, locked) is None)
 
     print("\nAdmin: bookings and user detail")
     with app.test_client() as c:
@@ -866,6 +983,16 @@ def main():
         with app.app_context():
             n = LabPi.query.filter_by(node_id="lab-legacy-1").first()
             check("legacy register links the experiment", n.experiment.slug == "dc-motor")
+            n.experiment_id = ids["e2"]  # admin reassigns the bench
+            db.session.commit()
+
+        # A Pi re-registers after every reboot or network drop, still carrying
+        # its configured experiment. That must not undo the admin's choice.
+        c.post("/api/lab-pi/register", headers=hdr, json={
+            "node_id": "lab-legacy-1", "experiment_id": ids["e1"]})
+        with app.app_context():
+            n = LabPi.query.filter_by(node_id="lab-legacy-1").first()
+            check("re-register keeps the admin's experiment", n.experiment_id == ids["e2"])
 
         r = c.get("/api/lab-pi/lab-legacy-1/sessions", headers=hdr)
         check("legacy session poll works", r.status_code == 200)
@@ -1232,9 +1359,15 @@ def main():
         check(f"{label} does not accept every origin",
               origins not in ("*", ["*"]), f"cors_allowed_origins={origins!r}")
 
+    # Flask-SocketIO's test client forces handlers to run synchronously, so
+    # event ordering can't be exercised in-process; check the setting instead.
+    for label, sio in (("relay server", _relay_sio), ("portal server", _portal_sio)):
+        check(f"{label} handles each browser's events in order (async_handlers off)",
+              sio.server_options.get("async_handlers") is False)
+
     print("\nSocket relay authorisation")
     from app import socketio as _sio
-    with mock.patch.object(app.extensions["pi_relay"], "forward"):
+    with mock.patch.object(app.extensions["pi_relay"], "forward") as relay_forward:
         sc = _sio.test_client(app, query_string=f"key={live_key}")
         check("an unauthenticated socket is not relayed",
               not sc.is_connected(), "still connected")
@@ -1256,6 +1389,27 @@ def main():
                                   query_string=f"key={live_key}")
             check("the owning student's socket connects",
                   sc.is_connected(), "owner was rejected")
+
+            locked_cfg = {"controls": {"serial_connect": False}, "serial_ports": []}
+            with mock.patch("services.nodes.ui_config", return_value=locked_cfg):
+                relay_forward.reset_mock()
+                sc.get_received()
+                sc.emit("connect_serial", {"conn_id": "p1", "port": "/dev/x", "baud": 9600})
+                got = sc.get_received()
+                check("a connect the admin switched off is not relayed",
+                      relay_forward.call_count == 0)
+                check("the page is told why its connect was refused",
+                      any(m["name"] == "serial_status" and m["args"][0]["status"] == "error"
+                          for m in got))
+                sc.emit("send_command", {"cmd": "S100"})
+                check("slider/button commands still go through with connect switched off",
+                      relay_forward.call_count == 1)
+            with mock.patch("services.nodes.ui_config",
+                            return_value={"controls": {"serial_connect": True}, "serial_ports": []}):
+                relay_forward.reset_mock()
+                sc.emit("connect_serial", {"conn_id": "p1", "port": "/dev/x", "baud": 9600})
+                check("an allowed connect is relayed", relay_forward.call_count == 1)
+
             sc.disconnect()
 
     print("\nEvery page renders")

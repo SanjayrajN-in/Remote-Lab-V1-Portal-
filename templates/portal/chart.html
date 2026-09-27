@@ -10,12 +10,12 @@
 <script src="{{ url_for('static', filename='vendor/chart-4.5.1.umd.min.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/chartjs-plugin-zoom-2.0.1.min.js') }}"></script>
 <style>
-html, body { height: 100%; margin: 0; font-family: 'Inter', sans-serif; background: #0d1117; color: #e0e0e0; overflow: hidden; }
+html, body { height: 100%; margin: 0; font-family: 'Inter', sans-serif; background: #f5f7fb; color: #1f2937; overflow: hidden; }
 .fullscreen-chart { width: 100vw; height: calc(100vh - 170px); margin-top: 20px; }
 .controls { position: absolute; top: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 10; align-items: flex-end; }
 .control-group { display: flex; gap: 10px; align-items: center; }
 .button { padding: 10px 15px; border-radius: 6px; border: none; cursor: pointer; background: #3b82f6; color: #041726; font-weight: 700; }
-.input { padding: 5px; border-radius: 4px; border: 1px solid #232936; background: #1a1f2b; color: #e0e0e0; }
+.input { padding: 5px; border-radius: 4px; border: 1px solid #d0d5dd; background: #ffffff; color: #1f2937; }
 </style>
 </head>
 <body>
@@ -35,7 +35,7 @@ html, body { height: 100%; margin: 0; font-family: 'Inter', sans-serif; backgrou
         <button id="y2Minus" class="button">-</button>
     </div>
     <button id="pauseChart" class="button">Pause Chart</button>
-    <button id="exportCSV" style="background:#232936;color:#fff;border-radius:6px;padding:8px 10px"><i class="fas fa-file-csv"></i> Export CSV</button>
+    <button id="exportCSV" style="background:#e2e8f0;color:#011a38;border-radius:6px;padding:8px 10px"><i class="fas fa-file-csv"></i> Export CSV</button>
     <button id="backBtn" class="button"><i class="fas fa-arrow-left"></i> Back to Main</button>
 </div>
 
@@ -72,18 +72,18 @@ const chart = new Chart(chartCtx, {
   type: 'line',
   data: { labels: [], datasets: [
     { label: 'Series 1', data: [], borderColor: '#3b82f6', borderWidth: 2, pointRadius: 0, fill: false, yAxisID: 'y' },
-    { label: 'Series 2', data: [], borderColor: '#00ff7f', borderWidth: 2, pointRadius: 0, fill: false, yAxisID: 'y1', hidden: true }
+    { label: 'Series 2', data: [], borderColor: '#16a34a', borderWidth: 2, pointRadius: 0, fill: false, yAxisID: 'y1', hidden: true }
   ]},
   options: {
     animation: false, responsive: true, maintainAspectRatio: false,
     layout: { padding: { left: 10, right: 10, top: 10, bottom: 60 } },
     scales: {
-      x: { display: true, grid: { color: '#222' }, title: { display:true, text: 'Time (s)', color: '#e0e0e0' }, ticks: { color: '#e0e0e0' } },
-      y: { display: true, position: 'left', grid: { color: '#333' }, title: { display:true, text: 'Series 1', color: '#e0e0e0' }, beginAtZero: true, min: 0, ticks: { beginAtZero: true, color: '#e0e0e0', font: { size: 12 } } },
-      y1: { display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display:true, text: 'Series 2 (Disabled)', color: '#e0e0e0' }, beginAtZero: true, min: 0, ticks: { beginAtZero: true, color: '#e0e0e0', font: { size: 12 } } }
+      x: { display: true, grid: { color: '#e5e7eb' }, title: { display:true, text: 'Time (s)', color: '#1f2937' }, ticks: { color: '#1f2937' } },
+      y: { display: true, position: 'left', grid: { color: '#e5e7eb' }, title: { display:true, text: 'Series 1', color: '#1f2937' }, beginAtZero: true, min: 0, ticks: { beginAtZero: true, color: '#1f2937', font: { size: 12 } } },
+      y1: { display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display:true, text: 'Series 2 (Disabled)', color: '#1f2937' }, beginAtZero: true, min: 0, ticks: { beginAtZero: true, color: '#1f2937', font: { size: 12 } } }
     },
     plugins: {
-      legend: { display: true, labels: { color: '#e0e0e0' } },
+      legend: { display: true, labels: { color: '#1f2937' } },
       zoom: {
         pan: { enabled: true, mode: 'xy' },
         zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' }
@@ -218,13 +218,17 @@ socket.on('sensor_data', (payload) => {
   const val2 = key2 && payload[key2] !== undefined ? Number(payload[key2]) :
                key2 && payload[key2.toLowerCase()] !== undefined ? Number(payload[key2.toLowerCase()]) : null;
 
-  if (val1 !== null || val2 !== null) {
+  // Only queue while the chart is running, and never more than it can show:
+  // chartLoop drains this on animation frames, which stop in a background
+  // tab, so an uncapped queue grew for as long as the tab was hidden/paused.
+  if (running && (val1 !== null || val2 !== null)) {
     chartBuffer.push({
       ts: Date.now(),
       sampleCount,
       value1: val1,
       value2: val2
     });
+    if (chartBuffer.length > visiblePoints) chartBuffer.splice(0, chartBuffer.length - visiblePoints);
   }
 });
 </script>

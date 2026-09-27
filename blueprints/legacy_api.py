@@ -144,9 +144,14 @@ def register():
     node.location = str(_pick(data, "location", default=node.location or "")) or None
 
     # The deployed Pi sends a numeric experiment_id; newer ones send a slug.
+    # Only used when the node has no experiment yet - the portal owns the
+    # assignment, and the Pi's configured value (often a default of 1, the
+    # DC motor rig) must not undo the admin's choice on every re-register.
     exp_id = _pick(data, "experiment_id")
     slug = _pick(data, "experiment_slug", "experiment", "experiment_name")
-    if exp_id is not None:
+    if node.experiment_id is not None:
+        pass
+    elif exp_id is not None:
         exp = Experiment.query.get(int(_number(exp_id) or 0))
         if exp:
             node.experiment_id = exp.id

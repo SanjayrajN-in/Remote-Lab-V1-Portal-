@@ -19,6 +19,7 @@ from flask_login import current_user, login_required
 
 import sockets
 from models import (Booking, Experiment, LabPi, Session, SystemLog, db, utcnow)
+from sqlalchemy.exc import IntegrityError
 from services import mailer, nodes, timeutil
 
 bp = Blueprint("portal", __name__)
@@ -279,7 +280,16 @@ def book(experiment_id):
         db.session.add(booking)
         SystemLog.write(f"{current_user.email} booked {exp.name} at {start:%Y-%m-%d %H:%M}",
                         category="booking", user_id=current_user.id)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            # F-16: another request took this exact slot between our free-check
+            # and our commit. The partial unique index is the real guard; this
+            # turns the race loss into a clean message instead of a 500.
+            db.session.rollback()
+            flash("Someone just booked that slot. Please pick another.", "error")
+            return redirect(url_for("portal.book", experiment_id=exp.id,
+                                    date=on_date.isoformat()))
 
         mailer.send_booking_confirmation(booking)
         flash("Booking confirmed. Check your email for the details.", "success")

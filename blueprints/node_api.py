@@ -83,8 +83,12 @@ def register():
     node.location = data.get("location") or node.location
     node.last_seen = utcnow()
 
+    # The portal owns the node -> experiment assignment. What the node reports
+    # is only a first-contact hint: honouring it on every re-register let a
+    # Pi's stale .env value silently undo the admin's choice each time it
+    # rebooted or lost its link to the master.
     slug = data.get("experiment_slug")
-    if slug:
+    if slug and node.experiment_id is None:
         exp = Experiment.query.filter_by(slug=slug).first()
         if exp:
             node.experiment_id = exp.id

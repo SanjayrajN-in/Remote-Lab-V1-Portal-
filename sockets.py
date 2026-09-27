@@ -15,6 +15,7 @@ from flask_login import current_user
 from flask_socketio import disconnect, emit, join_room, leave_room
 
 from models import Session
+from services import nodes, serial_policy
 from services.pi_relay import FORWARDED_EVENTS
 
 # socket.io sid -> session_key, so disconnect/forwarding know which session a
@@ -45,6 +46,19 @@ def _owned_node_for_session(session_key):
 def _session_for_sid():
     with _sid_lock:
         return _sid_session_map.get(request.sid)
+
+
+def _serial_block_reason(node, event, data):
+    """Why the node's admin settings refuse this serial action, or None.
+    Checked here rather than trusted to the lab page's greyed-out buttons.
+    Only the connect/disconnect/reset events are gated - they're one per
+    click, so reading the node's settings fresh each time is cheap."""
+    if event not in serial_policy.SERIAL_CONNECT_EVENTS:
+        return None
+    cfg = nodes.ui_config(node)
+    if cfg is nodes.FALLBACK_UI_CONFIG:
+        return "Could not check this bench's settings - try again in a moment"
+    return serial_policy.blocked_reason(event, data, cfg)
 
 
 def disconnect_relays(session_key):
@@ -112,6 +126,16 @@ def init_app(socketio):
             if not node:
                 emit("feedback", "[relay] This session is no longer yours")
                 disconnect()
+                return
+            reason = _serial_block_reason(node, event, data)
+            if reason:
+                conn_id = (data or {}).get("conn_id") if isinstance(data, dict) else None
+                if event == "connect_serial":
+                    # The page's serial_status handler clears its Connecting...
+                    # spinner and logs this against the right port.
+                    emit("serial_status", {"conn_id": conn_id, "status": "error", "message": reason})
+                else:
+                    emit("feedback", {"conn_id": conn_id, "text": f"Refused: {reason}"})
                 return
             current_app.extensions["pi_relay"].forward(session_key, node.base_url, event, data)
         return handler

@@ -24,3 +24,6 @@ python-socketio[client]==5.17.0
 # commit could run different code.
 aiortc==1.15.0
 av==16.1.0
+flask-limiter
+python-magic
+flask-wtf

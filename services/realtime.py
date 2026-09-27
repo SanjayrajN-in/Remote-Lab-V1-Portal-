@@ -9,7 +9,8 @@ from services.lab_pi_relay import LabPiRelayManager
 # to be "*" here, which told the server to accept a Socket.IO handshake from
 # any web page - so any site a signed-in student visited could open a relay
 # to their bench.
-socketio = SocketIO(async_mode="threading")
+# async_handlers=False keeps each browser's events in arrival order - see app.py.
+socketio = SocketIO(async_mode="threading", async_handlers=False)
 
 _relay = None
 _sid_session = {}

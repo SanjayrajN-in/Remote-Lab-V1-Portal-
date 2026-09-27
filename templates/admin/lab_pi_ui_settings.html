@@ -37,107 +37,9 @@
     <option value="{{ ap.path }}" {{ 'selected' if ap.path == current_value }}>{{ ap.label }}{{ ' -> ' + ap.resolved if ap.resolved }}</option>
     {% endfor %}
   </select>
-  <input type="text" id="{{ field_id }}" name="{{ field_name }}" value="{{ current_value }}" placeholder="or type a custom /dev/serial/by-id/... path" style="flex:1;min-width:200px">
+  <input type="text" id="{{ field_id }}" name="{{ field_name }}" form="mainSettingsForm" value="{{ current_value }}" placeholder="or type a custom /dev/serial/by-id/... path" style="flex:1;min-width:200px">
 </div>
 {% endmacro %}
-
-<form id="mainSettingsForm" method="post" action="{{ url_for('admin.lab_pi_ui_settings', node_id=device.id) }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <input type="hidden" name="all_control_keys" value="{{ control_keys | map('first') | join(',') }}">
-
-  <div class="card settings-card">
-    <h3>Experiment</h3>
-    <p class="muted">Shown in the top bar of the student's experiment page.</p>
-    <input type="text" name="experiment_name" value="{{ cfg.experiment_name }}" placeholder="e.g. DC Motor Speed Control">
-  </div>
-
-  <div class="grid-2">
-    <div class="card settings-card">
-      <h3>Student controls</h3>
-      <p class="muted">Disabled controls are greyed out for students and rejected server-side.</p>
-      {% for key, label in control_keys %}
-      <div class="toggle-row">
-        <label class="field-label" for="control_{{ key }}">{{ label }}</label>
-        <input type="checkbox" id="control_{{ key }}" name="control_{{ key }}" {{ 'checked' if cfg.controls.get(key, True) }}>
-      </div>
-      {% endfor %}
-    </div>
-
-    <div class="card settings-card">
-      <h3>Defaults</h3>
-      <p class="muted">Applied when a student's session loads.</p>
-      <div class="toggle-row">
-        <label class="field-label">Default view</label>
-        <div class="radio-group">
-          <label><input type="radio" name="main_view" value="plotter" {{ 'checked' if cfg.defaults.main_view == 'plotter' }}> Serial Plotter</label>
-          <label><input type="radio" name="main_view" value="oscilloscope" {{ 'checked' if cfg.defaults.main_view == 'oscilloscope' }}> Oscilloscope</label>
-        </div>
-      </div>
-      <div class="toggle-row">
-        <label class="field-label" for="dynamic_controls_visible">Dynamic Controls panel visible by default</label>
-        <input type="checkbox" id="dynamic_controls_visible" name="dynamic_controls_visible" {{ 'checked' if cfg.defaults.dynamic_controls_visible }}>
-      </div>
-      <div class="toggle-row">
-        <label class="field-label" for="serial_plotter_allow_port_switch">Students can switch the Serial Plotter's port</label>
-        <input type="checkbox" id="serial_plotter_allow_port_switch" name="serial_plotter_allow_port_switch" {{ 'checked' if cfg.defaults.serial_plotter_allow_port_switch }}>
-      </div>
-      <div class="toggle-row">
-        <label class="field-label" for="serial_plotter_default_port_id">Default plotter port</label>
-        <select id="serial_plotter_default_port_id" name="serial_plotter_default_port_id" style="width:170px">
-          {% for p in cfg.serial_ports %}
-          <option value="{{ p.id }}" {{ 'selected' if cfg.defaults.serial_plotter_default_port_id == p.id }}>{{ p.label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="field" style="margin-top:.6rem">
-        <label class="field-label" for="serial_plotter_required_prefixes">Required line prefix(es)</label>
-        <input type="text" id="serial_plotter_required_prefixes" name="serial_plotter_required_prefixes"
-               value="{{ cfg.defaults.serial_plotter_required_prefixes | join(', ') }}" placeholder="e.g. DATA:, SENSOR:">
-        <div class="hint">Comma-separated. If set, only serial lines starting with one of these (case-insensitive) are plotted. Leave blank to plot any line that looks like data.</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="grid-2">
-    <div class="card settings-card">
-      <h3>Debug (GDB/OpenOCD)</h3>
-      <p class="muted">Only matters when this node's Board (on the devices page) has a debug profile. Pin an exact MCU/probe here if this node ever has more than one debug-capable device attached, so Connect in the student's Debug panel always targets the right one instead of whichever OpenOCD finds first.</p>
-      <div class="field">
-        <label class="field-label" for="debug_board_id">MCU to debug</label>
-        <select id="debug_board_id" name="debug_board_id" style="width:280px">
-          {% for id, label in debug_boards %}
-          <option value="{{ id }}" {{ 'selected' if cfg.defaults.debug_board_id == id }}>{{ label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="field">
-        <label class="field-label" for="debug_port">Debug probe (by ID)</label>
-        {{ generic_port_picker('debug_port', 'debug_port', cfg.defaults.debug_port, available_ports) }}
-        <div class="hint">Leave blank to let OpenOCD pick whichever probe it finds. Pick a stable /dev/serial/by-id/... entry here rather than a raw /dev/ttyACM* index — those can collide with the Oscilloscope's own port or shift after a replug.</div>
-      </div>
-    </div>
-
-    <div class="card settings-card">
-      <h3>Oscilloscope</h3>
-      <p class="muted">The Oscilloscope auto-detects its board by USB VID/PID by default. If this node has another device that could match, or auto-detect keeps picking the wrong /dev/ttyACM* index, pin it here explicitly.</p>
-      <div class="field">
-        <label class="field-label" for="osc_board_id">Oscilloscope MCU</label>
-        <select id="osc_board_id" name="osc_board_id" style="width:280px">
-          <option value="">— Not set —</option>
-          {% for id, label in board_type_choices %}
-          <option value="{{ id }}" {{ 'selected' if cfg.defaults.osc_board_id == id }}>{{ label }}</option>
-          {% endfor %}
-        </select>
-        <div class="hint">Informational only — documents which board the scope firmware runs on; doesn't change how it's detected.</div>
-      </div>
-      <div class="field">
-        <label class="field-label" for="osc_port">Oscilloscope port (by ID)</label>
-        {{ generic_port_picker('osc_port', 'osc_port', cfg.defaults.osc_port, osc_available_ports) }}
-        <div class="hint">Leave blank for auto-detect (current behavior). Setting this forces a specific /dev/serial/by-id/... device instead of matching by VID/PID — takes effect immediately, no node restart needed.</div>
-      </div>
-    </div>
-  </div>
-</form>
 
 {% macro port_picker(field_id, current_value) %}
 <div style="display:flex;gap:.5rem;flex-wrap:wrap">
@@ -151,42 +53,161 @@
 </div>
 {% endmacro %}
 
-<div class="card settings-card">
-  <h3>Serial ports</h3>
-  <p class="muted">Define every MCU this node talks to. Ports with "Student visible" off still connect and feed data in the background, but never show up in the student UI. Exactly one port should be the "Primary target" that slider/button commands are written to. Does not include the Oscilloscope, which has its own auto-detected port.</p>
+{% set baud_rates = [300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400] %}
+
+{# Serial toggles live in the Serial card below, which sits outside this <form>
+   (it contains the per-port forms, and forms can't nest) - they join this
+   form via form="mainSettingsForm" instead. #}
+{% macro serial_toggle(key) %}
+{% if key in serial_controls %}
+{% set label, hint = serial_controls[key] %}
+<div class="toggle-row">
+  <label class="field-label" for="control_{{ key }}">{{ label }}</label>
+  <input type="checkbox" id="control_{{ key }}" name="control_{{ key }}" form="mainSettingsForm" {{ 'checked' if cfg.controls.get(key, True) }}>
+</div>
+{% if hint %}<div class="hint">{{ hint }}</div>{% endif %}
+{% endif %}
+{% endmacro %}
+
+<form id="mainSettingsForm" method="post" action="{{ url_for('admin.lab_pi_ui_settings', node_id=device.id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="all_control_keys" value="{{ control_keys | map('first') | join(',') }}">
+
+  <div class="card settings-card">
+    <h3>Experiment</h3>
+    <p class="muted">Shown in the top bar of the student's experiment page.</p>
+    <input type="text" name="experiment_name" value="{{ cfg.experiment_name }}" placeholder="e.g. DC Motor Speed Control">
+  </div>
+
+  <div class="grid-2">
+    <div class="card settings-card">
+      <h3>Student controls</h3>
+      <p class="muted">Disabled controls are greyed out for students and rejected server-side. Serial switches are in the Serial section below.</p>
+      {% for key, label in general_control_keys %}
+      <div class="toggle-row">
+        <label class="field-label" for="control_{{ key }}">{{ label }}</label>
+        <input type="checkbox" id="control_{{ key }}" name="control_{{ key }}" {{ 'checked' if cfg.controls.get(key, True) }}>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="card settings-card">
+      <h3>Page defaults</h3>
+      <p class="muted">Applied when a student's session loads.</p>
+      <div class="toggle-row">
+        <label class="field-label">Default view</label>
+        <div class="radio-group">
+          <label><input type="radio" name="main_view" value="plotter" {{ 'checked' if cfg.defaults.main_view != 'oscilloscope' }}> Serial Plotter</label>
+          <label><input type="radio" name="main_view" value="oscilloscope" {{ 'checked' if cfg.defaults.main_view == 'oscilloscope' }}> Oscilloscope</label>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <label class="field-label" for="dynamic_controls_visible">Dynamic Controls panel visible by default</label>
+        <input type="checkbox" id="dynamic_controls_visible" name="dynamic_controls_visible" {{ 'checked' if cfg.defaults.dynamic_controls_visible }}>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="card settings-card" id="serialSettings">
+  <h3>Serial</h3>
+  <p class="muted">Everything about how students reach this node's MCUs over serial. The switches in the top part are saved with <b>Save settings</b>; each port in the list at the bottom has its own Save.</p>
+
+  {% if serial_problems %}
+  <div class="serial-problems">
+    <strong>These settings contradict each other:</strong>
+    <ul>{% for msg in serial_problems %}<li>{{ msg }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+
+  <div class="grid-3">
+    <div class="serial-group">
+      <h4>Connecting</h4>
+      {{ serial_toggle('serial_connect') }}
+      {% if cfg.serial_ports %}
+      <div class="field" style="margin-top:.6rem">
+        <label class="field-label" for="primary_port_id">Primary target port</label>
+        <select id="primary_port_id" name="primary_port_id" form="mainSettingsForm" style="width:100%">
+          {% if not primary_port_id %}<option value="" selected>— None —</option>{% endif %}
+          {% for p in cfg.serial_ports %}
+          <option value="{{ p.id }}" {{ 'selected' if p.id == primary_port_id }}>{{ p.label }}</option>
+          {% endfor %}
+        </select>
+        <div class="hint">Where firmware is flashed and where slider/button controls set to "(default)" port send their commands.</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="serial-group">
+      <h4>Serial Monitor</h4>
+      {{ serial_toggle('serial_monitor_section') }}
+    </div>
+
+    <div class="serial-group" data-depends-on="control_serial_plotter">
+      <h4>Serial Plotter</h4>
+      {{ serial_toggle('serial_plotter') }}
+      <div class="toggle-row">
+        <label class="field-label" for="serial_plotter_allow_port_switch">Students can switch the plotted port</label>
+        <input type="checkbox" id="serial_plotter_allow_port_switch" name="serial_plotter_allow_port_switch" form="mainSettingsForm" {{ 'checked' if cfg.defaults.serial_plotter_allow_port_switch }}>
+      </div>
+      <div class="field" style="margin-top:.6rem">
+        <label class="field-label" for="serial_plotter_default_port_id">Port plotted first</label>
+        <select id="serial_plotter_default_port_id" name="serial_plotter_default_port_id" form="mainSettingsForm" style="width:100%">
+          <option value="">(first visible port)</option>
+          {% for p in plotter_ports %}
+          <option value="{{ p.id }}" {{ 'selected' if cfg.defaults.serial_plotter_default_port_id == p.id }}>{{ p.label }}</option>
+          {% endfor %}
+        </select>
+        <div class="hint">Only ports visible to students are listed.</div>
+      </div>
+      <div class="field">
+        <label class="field-label" for="serial_plotter_required_prefixes">Required line prefix(es)</label>
+        <input type="text" id="serial_plotter_required_prefixes" name="serial_plotter_required_prefixes" form="mainSettingsForm"
+               value="{{ cfg.defaults.serial_plotter_required_prefixes | join(', ') }}" placeholder="e.g. DATA:, SENSOR:">
+        <div class="hint">Comma-separated. If set, only serial lines starting with one of these (case-insensitive) are plotted. Leave blank to plot any line that looks like data.</div>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:right"><button type="submit" form="mainSettingsForm" class="btn btn-teal btn-sm">Save settings</button></div>
+
+  <h4 class="ports-heading">Ports</h4>
+  <p class="muted">One profile per MCU this node talks to. Doesn't include the Oscilloscope, which has its own port setting further down. A port only connects if the node auto-connects it (fixed path + Auto-connect) or a student can see it and press Connect.</p>
 
   {% if cfg.serial_ports %}
     {% for p in cfg.serial_ports %}
     <div class="entry-row">
       <div class="entry-head">
         <div>
-          <strong>{{ p.label }}</strong>
-          <div class="entry-meta muted tiny">{{ p.port or 'student picks port' }} @ {{ p.baud }}{{ ', primary target' if p.is_primary_target }}{{ ', hidden from students' if not p.student_visible }}{{ ', auto-connects' if p.auto_connect }}{{ ', disconnect locked' if not p.allow_disconnect }}</div>
+          <strong>{{ p.label }}</strong>{% if p.is_primary_target %} <span class="tag">primary target</span>{% endif %}
+          <div class="entry-meta muted tiny">{{ p.port or 'student picks the path' }} · default baud {{ p.baud }}{{ ' · hidden from students' if not p.student_visible }}{{ ' · plotter only' if not p.student_visible and p.plotter_visible }}{{ ' · auto-connects' if p.auto_connect }}{{ ' · disconnect locked' if not p.allow_disconnect }}</div>
         </div>
         <div class="entry-actions">
           <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit('editPort_{{ p.id }}')">Edit</button>
           <form method="post" action="{{ url_for('admin.lab_pi_ui_port_delete', node_id=device.id, port_id=p.id) }}" style="margin:0" onsubmit="return confirm('Remove this serial port?');">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-coral btn-sm">Remove</button>
           </form>
         </div>
       </div>
       <form id="editPort_{{ p.id }}" class="edit-form" method="post" action="{{ url_for('admin.lab_pi_ui_port_edit', node_id=device.id, port_id=p.id) }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {# Set from "Primary target port" above; carried through so saving this form doesn't clear them. #}
+        {% if p.is_primary_target %}<input type="hidden" name="sp_is_primary_target" value="on">{% endif %}
+        {% if p.plotter_visible %}<input type="hidden" name="sp_plotter_visible" value="on">{% endif %}
         <div class="field"><label class="field-label">Label</label><input type="text" name="sp_label" value="{{ p.label }}" required style="width:200px"></div>
-        <div class="field"><label class="field-label">Port (blank = student picks)</label>{{ port_picker('sp_port_edit_' + p.id, p.port) }}</div>
-        <div class="field"><label class="field-label">Baud</label>
+        <div class="field"><label class="field-label">Path (blank = student picks)</label>{{ port_picker('sp_port_edit_' + p.id, p.port) }}</div>
+        <div class="field"><label class="field-label">Default baud</label>
           <select name="sp_baud" style="width:130px">
-            {% for b in [300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400] %}
+            {% for b in baud_rates %}
             <option value="{{ b }}" {{ 'selected' if p.baud == b }}>{{ b }}</option>
             {% endfor %}
           </select>
+          <div class="hint">Used for auto-connect and preselected for students, who can still change it.</div>
         </div>
         <div class="toggle-row"><label class="field-label">Student visible</label><input type="checkbox" name="sp_student_visible" {{ 'checked' if p.student_visible }}></div>
         <div class="toggle-row"><label class="field-label">Auto-connect</label><input type="checkbox" name="sp_auto_connect" {{ 'checked' if p.auto_connect }}></div>
         <div class="toggle-row"><label class="field-label">Students can disconnect</label><input type="checkbox" name="sp_allow_disconnect" {{ 'checked' if p.allow_disconnect }}></div>
-        <div class="toggle-row"><label class="field-label">Primary target</label><input type="checkbox" name="sp_is_primary_target" {{ 'checked' if p.is_primary_target }}></div>
-        <button type="submit" class="btn btn-sm" style="margin-top:.6rem">Save changes</button>
+        <button type="submit" class="btn btn-sm" style="margin-top:.6rem">Save port</button>
       </form>
     </div>
     {% endfor %}
@@ -195,12 +216,12 @@
   {% endif %}
 
   <form class="add-form" method="post" action="{{ url_for('admin.lab_pi_ui_port_add', node_id=device.id) }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="field"><label class="field-label" for="sp_label">Label</label><input type="text" id="sp_label" name="sp_label" placeholder="e.g. Teacher MCU" required style="width:200px"></div>
-    <div class="field"><label class="field-label" for="sp_port_new">Port (blank = student picks)</label>{{ port_picker('sp_port_new', '') }}</div>
-    <div class="field"><label class="field-label" for="sp_baud">Baud</label>
+    <div class="field"><label class="field-label" for="sp_port_new">Path (blank = student picks)</label>{{ port_picker('sp_port_new', '') }}</div>
+    <div class="field"><label class="field-label" for="sp_baud">Default baud</label>
       <select id="sp_baud" name="sp_baud" style="width:130px">
-        {% for b in [300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400] %}
+        {% for b in baud_rates %}
         <option value="{{ b }}" {{ 'selected' if b == 115200 }}>{{ b }}</option>
         {% endfor %}
       </select>
@@ -208,9 +229,53 @@
     <div class="toggle-row"><label class="field-label" for="sp_student_visible">Student visible</label><input type="checkbox" id="sp_student_visible" name="sp_student_visible" checked></div>
     <div class="toggle-row"><label class="field-label" for="sp_auto_connect">Auto-connect</label><input type="checkbox" id="sp_auto_connect" name="sp_auto_connect"></div>
     <div class="toggle-row"><label class="field-label" for="sp_allow_disconnect">Students can disconnect</label><input type="checkbox" id="sp_allow_disconnect" name="sp_allow_disconnect" checked></div>
-    <div class="toggle-row"><label class="field-label" for="sp_is_primary_target">Primary target</label><input type="checkbox" id="sp_is_primary_target" name="sp_is_primary_target"></div>
+    {% if cfg.serial_ports %}
+    <div class="toggle-row"><label class="field-label" for="sp_is_primary_target">Make this the primary target</label><input type="checkbox" id="sp_is_primary_target" name="sp_is_primary_target"></div>
+    {% else %}
+    <p class="hint">The first port becomes the primary target automatically.</p>
+    {% endif %}
     <button type="submit" class="btn btn-sm" style="margin-top:.6rem">Add port</button>
   </form>
+</div>
+
+<div class="grid-2">
+  <div class="card settings-card">
+    <h3>Debug (GDB/OpenOCD)</h3>
+    <p class="muted">Only matters when this node's Board (on the devices page) has a debug profile. Pin an exact MCU/probe here if this node ever has more than one debug-capable device attached, so Connect in the student's Debug panel always targets the right one instead of whichever OpenOCD finds first.</p>
+    <div class="field">
+      <label class="field-label" for="debug_board_id">MCU to debug</label>
+      <select id="debug_board_id" name="debug_board_id" form="mainSettingsForm" style="width:280px">
+        {% for id, label in debug_boards %}
+        <option value="{{ id }}" {{ 'selected' if cfg.defaults.debug_board_id == id }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label" for="debug_port">Debug probe (by ID)</label>
+      {{ generic_port_picker('debug_port', 'debug_port', cfg.defaults.debug_port, available_ports) }}
+      <div class="hint">Leave blank to let OpenOCD pick whichever probe it finds. Pick a stable /dev/serial/by-id/... entry here rather than a raw /dev/ttyACM* index — those can collide with the Oscilloscope's own port or shift after a replug.</div>
+    </div>
+  </div>
+
+  <div class="card settings-card">
+    <h3>Oscilloscope</h3>
+    <p class="muted">The Oscilloscope auto-detects its board by USB VID/PID by default. If this node has another device that could match, or auto-detect keeps picking the wrong /dev/ttyACM* index, pin it here explicitly.</p>
+    <div class="field">
+      <label class="field-label" for="osc_board_id">Oscilloscope MCU</label>
+      <select id="osc_board_id" name="osc_board_id" form="mainSettingsForm" style="width:280px">
+        <option value="">— Not set —</option>
+        {% for id, label in board_type_choices %}
+        <option value="{{ id }}" {{ 'selected' if cfg.defaults.osc_board_id == id }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <div class="hint">Informational only — documents which board the scope firmware runs on; doesn't change how it's detected.</div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="osc_port">Oscilloscope port (by ID)</label>
+      {{ generic_port_picker('osc_port', 'osc_port', cfg.defaults.osc_port, osc_available_ports) }}
+      <div class="hint">Leave blank for auto-detect (current behavior). Setting this forces a specific /dev/serial/by-id/... device instead of matching by VID/PID — takes effect immediately, no node restart needed.</div>
+    </div>
+  </div>
 </div>
 
 <div class="card settings-card">
@@ -224,7 +289,7 @@
         <div>
           <strong>{{ c.label }}</strong>
           <div class="entry-meta muted tiny">
-            {{ c.type }}{{ ', ' + c.cmdFormat if c.type == 'slider' and c.cmdFormat }}{% for p in cfg.serial_ports %}{% if p.id == c.portId %}, port: {{ p.label }}{% endif %}{% endfor %}{% if c.type == 'readout' and c.unit %}, unit: {{ c.unit }}{% endif %}
+            {{ c.type }}{% if c.type == 'button' %}{{ ', push button' if c.buttonMode == 'momentary' else ', switch' }}{% endif %}{{ ', ' + c.cmdFormat if c.type == 'slider' and c.cmdFormat }}{% for p in cfg.serial_ports %}{% if p.id == c.portId %}, port: {{ p.label }}{% endif %}{% endfor %}{% if c.type == 'readout' and c.unit %}, unit: {{ c.unit }}{% endif %}
           </div>
         </div>
         <div class="entry-actions">
@@ -259,8 +324,21 @@
         </div>
         <div class="field"><label class="field-label">Command format</label><input type="text" name="rc_cmd_format" value="{{ c.cmdFormat }}" style="width:160px"></div>
         {% elif c.type == 'button' %}
-        <div class="field"><label class="field-label">On command</label><input type="text" name="rc_on_cmd" value="{{ c.onCmd }}" style="width:160px"></div>
-        <div class="field"><label class="field-label">Off command</label><input type="text" name="rc_off_cmd" value="{{ c.offCmd }}" style="width:160px"></div>
+        {% set is_push = c.buttonMode == 'momentary' %}
+        <div class="field"><label class="field-label">Button type</label>
+          <select name="rc_button_mode" onchange="updateButtonModeFields(this)" style="width:180px">
+            <option value="toggle" {{ 'selected' if not is_push }}>Switch (ON/OFF)</option>
+            <option value="momentary" {{ 'selected' if is_push }}>Push button</option>
+          </select>
+        </div>
+        <div class="bm-fields-toggle" style="{{ 'display:none' if is_push }}">
+          <div class="field"><label class="field-label">On command</label><input type="text" name="rc_on_cmd" value="{{ c.onCmd if c.onCmd is not none else '1' }}" style="width:160px"></div>
+          <div class="field"><label class="field-label">Off command</label><input type="text" name="rc_off_cmd" value="{{ c.offCmd if c.offCmd is not none else '0' }}" style="width:160px"></div>
+        </div>
+        <div class="bm-fields-momentary" style="{{ 'display:none' if not is_push }}">
+          <div class="field"><label class="field-label">Press command</label><input type="text" name="rc_press_cmd" value="{{ c.pressCmd if c.pressCmd is not none else '1' }}" style="width:160px"></div>
+          <div class="field"><label class="field-label">Release command</label><input type="text" name="rc_release_cmd" value="{{ c.releaseCmd if c.releaseCmd is not none else '0' }}" style="width:160px"></div>
+        </div>
         {% elif c.type == 'readout' %}
         <div class="field"><label class="field-label">Data key</label><input type="text" name="rc_data_key" value="{{ c.dataKey }}" style="width:200px"></div>
         <div class="field"><label class="field-label">Unit (LaTeX)</label><input type="text" name="rc_unit" value="{{ c.unit }}" style="width:160px"></div>
@@ -311,8 +389,22 @@
       <p class="hint">Use <span class="mono">{value}</span> as the placeholder, e.g. <span class="mono">{value}</span>, <span class="mono">I{value}</span>, or <span class="mono">{value}A</span>.</p>
     </div>
     <div id="rc_fields_button" class="rc-fields" style="display:none">
-      <div class="field"><label class="field-label" for="rc_on_cmd">On command</label><input type="text" id="rc_on_cmd" name="rc_on_cmd" value="1" style="width:160px"></div>
-      <div class="field"><label class="field-label" for="rc_off_cmd">Off command</label><input type="text" id="rc_off_cmd" name="rc_off_cmd" value="0" style="width:160px"></div>
+      <div class="field"><label class="field-label" for="rc_button_mode">Button type</label>
+        <select id="rc_button_mode" name="rc_button_mode" onchange="updateButtonModeFields(this)" style="width:180px">
+          <option value="toggle">Switch (ON/OFF)</option>
+          <option value="momentary">Push button</option>
+        </select>
+      </div>
+      <div class="bm-fields-toggle">
+        <div class="field"><label class="field-label" for="rc_on_cmd">On command</label><input type="text" id="rc_on_cmd" name="rc_on_cmd" value="1" style="width:160px"></div>
+        <div class="field"><label class="field-label" for="rc_off_cmd">Off command</label><input type="text" id="rc_off_cmd" name="rc_off_cmd" value="0" style="width:160px"></div>
+        <p class="hint">Each click flips the switch and sends the On or Off command.</p>
+      </div>
+      <div class="bm-fields-momentary" style="display:none">
+        <div class="field"><label class="field-label" for="rc_press_cmd">Press command</label><input type="text" id="rc_press_cmd" name="rc_press_cmd" value="1" style="width:160px"></div>
+        <div class="field"><label class="field-label" for="rc_release_cmd">Release command</label><input type="text" id="rc_release_cmd" name="rc_release_cmd" value="0" style="width:160px"></div>
+        <p class="hint">Sends the Press command when the student presses the button and the Release command when they let go, like a real push button.</p>
+      </div>
     </div>
     <div id="rc_fields_readout" class="rc-fields" style="display:none">
       <div class="field"><label class="field-label" for="rc_data_key">Data key</label><input type="text" id="rc_data_key" name="rc_data_key" placeholder="e.g. temperature" style="width:200px"></div>
@@ -344,12 +436,37 @@
   .settings-card .field { margin-bottom: .6rem; }
   .settings-card .field-label { display: block; font-size: .8rem; font-weight: 600; color: var(--ink); margin-bottom: .25rem; }
   .add-form { margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--line); }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.15rem; align-items: start; }
+  @media (max-width: 1100px) { .grid-3 { grid-template-columns: 1fr; } }
+  .serial-group h4, .ports-heading { margin: 0 0 .3rem 0; font-size: .9rem; }
+  .ports-heading { margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+  .serial-group.is-off > :not(h4):not(.toggle-row:first-of-type) { opacity: .45; }
+  .serial-problems { border: 1px solid #e0a13a; background: #fff7e8; color: #6b4a00; border-radius: var(--r-sm); padding: .7rem .9rem; margin-bottom: 1rem; font-size: .86rem; }
+  .serial-problems ul { margin: .35rem 0 0 1.1rem; padding: 0; }
+  .tag { display: inline-block; font-size: .7rem; font-weight: 600; padding: .05rem .4rem; border-radius: 999px; background: var(--line); color: var(--ink); vertical-align: middle; }
 </style>
 <script>
 function toggleEdit(id) {
     var el = document.getElementById(id);
     el.style.display = el.style.display === 'none' || !el.style.display ? 'block' : 'none';
 }
+// Shows the switch or push-button command fields inside the form that owns
+// this "Button type" select (the add form and each edit form have their own).
+function updateButtonModeFields(sel) {
+    var scope = sel.closest('form');
+    var push = sel.value === 'momentary';
+    scope.querySelector('.bm-fields-toggle').style.display = push ? 'none' : 'block';
+    scope.querySelector('.bm-fields-momentary').style.display = push ? 'block' : 'none';
+}
+// Dims a Serial sub-section's other settings while its own on/off switch is
+// off, so it's obvious they currently have no effect (they still save).
+document.querySelectorAll('[data-depends-on]').forEach(function (group) {
+    var sw = document.getElementById(group.dataset.dependsOn);
+    if (!sw) return;
+    var sync = function () { group.classList.toggle('is-off', !sw.checked); };
+    sw.addEventListener('change', sync);
+    sync();
+});
 function updateRcFields() {
     var type = document.getElementById('rc_type').value;
     document.getElementById('rc_fields_slider').style.display = type === 'slider' ? 'block' : 'none';

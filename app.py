@@ -12,6 +12,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager
 from flask_socketio import SocketIO
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 from config import BASE_DIR, Config, validate_secrets
 from models import User, db, utcnow
@@ -32,8 +34,15 @@ login_manager.login_message_category = "info"
 # NOTE: relay state (which node a session is talking to) lives in this
 # process's memory - the portal must run as a single worker (see
 # install/remote-lab-portal.service).
-socketio = SocketIO(async_mode="threading")
+# async_handlers=False: run each browser's events one at a time, in the order
+# they arrived. The default starts a thread per event, so a push button's
+# press and release (milliseconds apart) could overtake each other on the way
+# to the node and leave the board's output stuck on.
+socketio = SocketIO(async_mode="threading", async_handlers=False)
 csrf = CSRFProtect()
+limiter = Limiter(key_func=get_remote_address,
+                  default_limits=["300 per hour"],
+                  storage_uri="memory://")
 
 
 @login_manager.user_loader
@@ -50,8 +59,17 @@ def load_user(user_id):
 def create_app(config_object=Config):
     app = Flask(__name__)
     app.config.from_object(config_object)
+
+    # F-07: fail closed on missing/default secrets.
+    _bad = {"", "dev-only-change-me", "change-this-node-secret", None}
+    for _name in ("SECRET_KEY", "NODE_SHARED_SECRET"):
+        if app.config.get(_name) in _bad:
+            raise RuntimeError(
+                f"{_name} is unset or a known default. Set a strong value "
+                f"in .env before starting. Refusing to run insecurely.")
     validate_secrets(app.config)
     csrf.init_app(app)
+    limiter.init_app(app)
 
     # nginx terminates TLS and proxies to this app, so without this the
     # request looks like plain HTTP from 127.0.0.1: HSTS never fires and,

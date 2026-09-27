@@ -18,9 +18,17 @@ from models import (Booking, Course, Experiment, LabPi, LabPiHeartbeat,
                     Session, SystemLog, User, db, utcnow)
 from services.netguard import UnsafeNodeAddress, validate_address, validate_port
 import sockets
-from services import importer, mailer, nodes, timeutil, validators
+from services import importer, mailer, nodes, serial_policy, timeutil, validators
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+
+def _safe_int(value, default):
+    """Parse an int from form input; fall back instead of raising a 500 (F-24)."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def admin_required(f):
@@ -303,7 +311,7 @@ def experiments():
             description=request.form.get("description"),
             objectives=request.form.get("objectives"),
             apparatus=request.form.get("apparatus"),
-            max_duration_min=int(request.form.get("max_duration_min") or 60),
+            max_duration_min=_safe_int(request.form.get("max_duration_min"), 60),
             course_id=request.form.get("course_id") or None,
         )
         pdf = request.files.get("sop_pdf")
@@ -336,7 +344,7 @@ def edit_experiment(experiment_id):
     exp.description = request.form.get("description")
     exp.objectives = request.form.get("objectives")
     exp.apparatus = request.form.get("apparatus")
-    exp.max_duration_min = int(request.form.get("max_duration_min") or exp.max_duration_min)
+    exp.max_duration_min = _safe_int(request.form.get("max_duration_min"), exp.max_duration_min)
     exp.course_id = request.form.get("course_id") or None
     exp.is_active = request.form.get("is_active") == "on"
 
@@ -436,7 +444,7 @@ def add_device():
         flash(f"{node.name} added.", "success")
 
     slug = info.get("experiment_slug")
-    if slug:
+    if slug and node.experiment_id is None:
         exp = Experiment.query.filter_by(slug=slug).first()
         if exp:
             node.experiment_id = exp.id
@@ -561,7 +569,13 @@ def _control_to_rc_form(control):
             "rc_cmd_format": control.get("cmdFormat", "{value}"),
         })
     elif control.get("type") == "button":
-        form.update({"rc_on_cmd": control.get("onCmd", "1"), "rc_off_cmd": control.get("offCmd", "0")})
+        form.update({
+            "rc_on_cmd": control.get("onCmd", "1"),
+            "rc_off_cmd": control.get("offCmd", "0"),
+            "rc_button_mode": control.get("buttonMode", "toggle"),
+            "rc_press_cmd": control.get("pressCmd", "1"),
+            "rc_release_cmd": control.get("releaseCmd", "0"),
+        })
     elif control.get("type") == "readout":
         form.update({
             "rc_data_key": control.get("dataKey", ""),
@@ -600,6 +614,69 @@ def _ui_config_body_from_form(form):
     }
 
 
+def _port_to_sp_form(port, is_primary):
+    """A serial-port profile as GET /api/admin/ui-config returns it, turned
+    back into the sp_* fields PUT /api/admin/ports/<id> expects - so the
+    portal can flip one flag without the other fields being reset.
+    Checkboxes follow HTML form rules: present as "on" when true, absent
+    when false."""
+    form = {"sp_label": port.get("label", ""), "sp_port": port.get("port") or "",
+            "sp_baud": port.get("baud", 115200)}
+    for field in ("student_visible", "auto_connect", "allow_disconnect", "plotter_visible"):
+        if port.get(field):
+            form[f"sp_{field}"] = "on"
+    if is_primary:
+        form["sp_is_primary_target"] = "on"
+    return form
+
+
+def _set_primary_port(node, ports, primary_id):
+    """Make primary_id the only port marked primary target (none if empty),
+    touching only the ports whose flag actually changes. The node stores
+    the flag per port, so "exactly one" is enforced here. Returns a list
+    of error strings."""
+    errors = []
+    for port in ports:
+        want = port["id"] == primary_id
+        if bool(port.get("is_primary_target")) == want:
+            continue
+        ok, result = nodes.admin_api(node, "PUT", f'/api/admin/ports/{port["id"]}',
+                                     _port_to_sp_form(port, want))
+        if not ok:
+            errors.append(f'Could not update primary target on port "{port.get("label")}": {result}')
+    return errors
+
+
+def _save_settings_form(node, form):
+    """Push the main settings form to the node: the ui-config body, plus the
+    primary-target choice (which lives on the port profiles, not in
+    ui-config). Returns (ok, error_or_None, warnings)."""
+    ok, result = nodes.admin_api(node, "POST", "/api/admin/ui-config", _ui_config_body_from_form(form))
+    if not ok:
+        return False, result, []
+    if "primary_port_id" not in form:
+        return True, None, []
+    ok, cfg = nodes.admin_api(node, "GET", "/api/admin/ui-config")
+    if not ok:
+        return True, None, [f"Settings saved, but the primary target was not updated: {cfg}"]
+    return True, None, _set_primary_port(node, cfg.get("serial_ports", []), form.get("primary_port_id") or "")
+
+
+# Serial switches get their own section on the settings page, grouped by what
+# they affect, instead of sitting in the generic "Student controls" list.
+# Label/hint here override the node's own label for these keys only.
+SERIAL_CONTROL_KEYS = {
+    "serial_connect": ("Students can connect, disconnect and reset ports",
+                       "Off locks the Connect, Disconnect and Reset MCU buttons on every port. "
+                       "Ports with a fixed path and Auto-connect on are still connected by the "
+                       "node, and slider/button controls keep working."),
+    "serial_monitor_section": ("Show the Serial Monitor",
+                               "Each visible port's log and command box. Hiding it doesn't hide "
+                               "the Debug Console, Registers, Disassembly or Memory tabs."),
+    "serial_plotter": ("Show the Serial Plotter", None),
+}
+
+
 # Fallback only - lab_pi_ui_settings() prefers the live control_keys a node
 # sends back from GET /api/admin/ui-config (the node is the authority on
 # what it supports), and uses this list only for a node too old to send one.
@@ -624,10 +701,11 @@ def lab_pi_ui_settings(node_id):
         return redirect(url_for("admin.devices"))
 
     if request.method == "POST":
-        body = _ui_config_body_from_form(request.form)
-        ok, result = nodes.admin_api(node, "POST", "/api/admin/ui-config", body)
-        flash("UI settings saved and pushed to the node." if ok else result,
+        ok, error, warnings = _save_settings_form(node, request.form)
+        flash("UI settings saved and pushed to the node." if ok else error,
               "success" if ok else "error")
+        for w in warnings:
+            flash(w, "warning")
         return redirect(url_for("admin.lab_pi_ui_settings", node_id=node_id))
 
     ok, cfg = nodes.admin_api(node, "GET", "/api/admin/ui-config")
@@ -648,8 +726,18 @@ def lab_pi_ui_settings(node_id):
     # what to call them - not a static guess kept in sync by hand. Falls
     # back to CONTROL_KEYS only if an older node doesn't send this yet.
     live_keys = [(c["key"], c["label"]) for c in cfg.get("control_keys", [])]
+    control_keys = live_keys or CONTROL_KEYS
+    serial_controls = {key: SERIAL_CONTROL_KEYS[key] for key, _ in control_keys
+                       if key in SERIAL_CONTROL_KEYS}
+    ports = cfg.get("serial_ports", [])
     return render_template("admin/lab_pi_ui_settings.html", device=node, cfg=cfg,
-                           control_keys=live_keys or CONTROL_KEYS,
+                           control_keys=control_keys,
+                           general_control_keys=[(k, l) for k, l in control_keys
+                                                 if k not in SERIAL_CONTROL_KEYS],
+                           serial_controls=serial_controls,
+                           plotter_ports=serial_policy.plotter_ports(cfg),
+                           primary_port_id=next((p["id"] for p in ports if p.get("is_primary_target")), ""),
+                           serial_problems=serial_policy.problems(cfg),
                            available_ports=cfg.get("available_ports", []),
                            osc_available_ports=cfg.get("osc_available_ports", []),
                            debug_boards=nodes.DEBUG_BOARDS,
@@ -692,8 +780,20 @@ def lab_pi_ui_control_delete(node_id, control_id):
 def lab_pi_ui_port_add(node_id):
     node = _require_online_node(node_id)
     if node is not None:
-        ok, result = nodes.admin_api(node, "POST", "/api/admin/ports", dict(request.form))
+        form = dict(request.form)
+        ok, cfg = nodes.admin_api(node, "GET", "/api/admin/ui-config")
+        existing = cfg.get("serial_ports", []) if ok else []
+        # Only one primary target: the first port always is one, and a new
+        # port marked primary takes the flag over from the others.
+        if ok and not existing:
+            form["sp_is_primary_target"] = "on"
+        errors = []
+        if form.get("sp_is_primary_target") == "on":
+            errors = _set_primary_port(node, existing, "")
+        ok, result = nodes.admin_api(node, "POST", "/api/admin/ports", form)
         flash("Serial port added." if ok else result, "success" if ok else "error")
+        for e in errors:
+            flash(e, "warning")
     return redirect(url_for("admin.lab_pi_ui_settings", node_id=node_id))
 
 
@@ -747,9 +847,9 @@ def lab_pi_ui_copy_to(node_id):
     # then copy that just-saved state onward. Without this, Copy would read
     # back whatever was last actually saved to disk, silently ignoring any
     # edit made since the last "Save settings" click.
-    ok, result = nodes.admin_api(source, "POST", "/api/admin/ui-config", _ui_config_body_from_form(request.form))
+    ok, error, save_warnings = _save_settings_form(source, request.form)
     if not ok:
-        flash(f'Could not save current settings to "{source.name}" before copying: {result}', "error")
+        flash(f'Could not save current settings to "{source.name}" before copying: {error}', "error")
         return redirect(url_for("admin.lab_pi_ui_settings", node_id=node_id))
 
     ok, source_cfg = nodes.admin_api(source, "GET", "/api/admin/ui-config")
@@ -763,7 +863,7 @@ def lab_pi_ui_copy_to(node_id):
 
     source_ports = source_cfg.get("serial_ports", [])
     target_ports = target_cfg.get("serial_ports", [])
-    warnings = []
+    warnings = list(save_warnings)
 
     default_port_id, warn = _remap_port_id_by_label(
         source_cfg.get("defaults", {}).get("serial_plotter_default_port_id"), source_ports, target_ports)

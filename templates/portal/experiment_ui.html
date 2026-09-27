@@ -69,6 +69,7 @@ html,body{height:100%;margin:0;font-family:'Inter',sans-serif;background:#f4f6fa
 .conn-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;font-size:13px;color:#7d8ca0}
 .conn-row .small-input,.conn-row select{width:150px}
 .conn-value{color:#011a38;display:flex;align-items:center;gap:6px;font-weight:600}
+.conn-port{display:block;min-width:0;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:help}
 .file-chip{display:flex;align-items:center;gap:10px;background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;margin-bottom:8px}
 .file-chip i.fa-file{color:#011a38;font-size:16px}
 .file-chip-info{flex:1;display:flex;flex-direction:column;font-size:13px;min-width:0}
@@ -133,7 +134,7 @@ html,body{height:100%;margin:0;font-family:'Inter',sans-serif;background:#f4f6fa
 .chart-field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .chart-field>span{font-size:11px;color:#7d8ca0;text-transform:uppercase;letter-spacing:.4px}
 .chart-field select,.chart-field input{width:100%;box-sizing:border-box}
-.card{background:#ffffff;padding:14px;border-radius:10px;border:1px solid #eef2f8;box-shadow:0 0 10px rgba(0,0,0,0.4);position:relative}
+.card{background:#ffffff;padding:14px;border-radius:10px;border:1px solid #d0d5dd;box-shadow:none;position:relative}
 .section-title, .card h3{color:#011a38;margin:0 0 8px 0;font-size:16px}
 .controls-group{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 button{padding:8px 10px;border-radius:6px;border:none;cursor:pointer}
@@ -164,8 +165,8 @@ button{padding:8px 10px;border-radius:6px;border:none;cursor:pointer}
 .video-container:hover .video-controls-overlay,.video-container:focus-within .video-controls-overlay{opacity:1}
 .video-controls-top{display:flex;gap:6px;justify-content:flex-end;pointer-events:auto}
 .video-controls-bottom{display:flex;justify-content:space-between;align-items:center;pointer-events:auto}
-.vid-btn{width:32px;height:32px;border-radius:50%;background:rgba(4,23,38,0.8);color:#011a38;border:1px solid #011a38;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s ease,color .15s ease}
-.vid-btn:hover{background:#011a38;color:#ffffff}
+.vid-btn{width:32px;height:32px;border-radius:50%;background:rgba(4,23,38,0.7);color:#ffffff;border:1px solid rgba(255,255,255,0.4);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s ease,color .15s ease}
+.vid-btn:hover{background:#f48221;border-color:#f48221;color:#ffffff}
 .vid-btn-lg{width:38px;height:38px;font-size:15px}
 .label-muted{font-size:12px;color:#7d8ca0;margin-left:6px}
 .readout-value{font-family:'Roboto Mono',monospace;font-size:16px;color:#00ff7f;background:#101018;padding:4px 8px;border-radius:4px;min-width:100px;text-align:right;}
@@ -192,6 +193,10 @@ button{padding:8px 10px;border-radius:6px;border:none;cursor:pointer}
 .control-dialog-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 .control-dialog-btns button{padding:8px 16px}
 .control-dialog-cancel{background:#eef2f8;color:#011a38}
+.control-dialog-row.cd-hidden{display:none}
+/* Push (momentary) button: no text selection / scroll / long-press menu while held */
+.push-button{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.push-button.pressed{filter:brightness(.8);transform:translateY(1px);box-shadow:inset 0 2px 4px rgba(0,0,0,.3)}
 @media(max-width:900px){.container{flex-direction:column}.left-column{width:100%;order:2}.right-column{order:1}}
 @media(max-width:1100px){.chart-video-row{flex-direction:column}}
 /* small layout tweaks for the new button card */
@@ -224,10 +229,8 @@ html,body{overflow:auto !important;background:var(--p-bg) !important;color:var(-
 .left-column{overflow-y:auto !important;overflow-x:hidden !important}
 .right-column{overflow:auto !important}
 /* re-darken the true data screens */
-#mainChart,#mainChart canvas,.chart-video-row>.card:first-child,.video-container,.slot-feedback,.readout-value,#debugMemDump{background:#0b1119 !important}
-.chart-video-row>.card:first-child{color:#cfe3d8 !important}
+.video-container,.slot-feedback,.readout-value,#debugMemDump{background:#0b1119 !important}
 .slot-feedback{color:#00ff7f !important;border-color:#1c2836 !important}
-.chart-video-row>.card:first-child h3,.chart-video-row>.card:first-child .chart-field>span{color:#9fb2c8 !important}
 </style>
 
 <script>
@@ -334,7 +337,7 @@ function esc(v) {
         <h4 class="sidebar-section-title">Connection{{ ' — ' + p.label if ui_config.serial_ports|selectattr('student_visible')|list|length > 1 }}</h4>
         <div class="conn-row" style="padding-top:0"><span>Status</span><span class="conn-value"><span class="status-dot off slot-status-dot"></span><b class="slot-status-text">Disconnected</b></span></div>
         {% if p.port %}
-        <div class="conn-row"><span>Port</span><span class="conn-value">{{ p.port }}</span></div>
+        <div class="conn-row"><span>Port</span><span class="conn-value conn-port" title="{{ p.port }}">{{ p.label or p.port.rsplit('/', 1)[-1] }}</span></div>
         {% else %}
         <div class="conn-row"><span>Port</span><select class="slot-port small-input"></select></div>
         {% endif %}
@@ -466,7 +469,7 @@ function esc(v) {
         <h3 style="margin:0;">Real-time Sensor Data Chart</h3>
         <div style="display:flex; gap:8px; align-items:center;">
           <span style="font-size:11px; color:#888; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px;">Current View:</span>
-          <select id="mainUiMode" class="small-input" style="background: #011a38; color: #000; font-weight: bold; width: 140px;">
+          <select id="mainUiMode" class="small-input" style="background: #ffffff; color: #011a38; border:1px solid #d0d5dd; font-weight: bold; width: 140px;">
             {% if ui_config.controls.serial_plotter %}<option value="plotter" {{ 'selected' if ui_config.defaults.main_view == 'plotter' }}>Serial Plotter</option>{% endif %}
             {% if ui_config.controls.oscilloscope %}<option value="oscilloscope" {{ 'selected' if ui_config.defaults.main_view == 'oscilloscope' }}>Oscilloscope</option>{% endif %}
           </select>
@@ -506,7 +509,7 @@ function esc(v) {
               <option value="">(Disabled)</option>
             </select>
           </label>
-          <button id="exportCSV" style="background:#e2e8f0;color:#fff;border-radius:6px;padding:8px 10px;height:34px">Export CSV</button>
+          <button id="exportCSV" style="background:#e2e8f0;color:#011a38;border-radius:6px;padding:8px 10px;height:34px">Export CSV</button>
         </div>
 
         <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
@@ -528,8 +531,8 @@ function esc(v) {
 
       <!-- Wrapper for OSC-only controls (initially hidden) -->
       <div id="mainOscControls" style="display:none; gap:12px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
-        <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#FFDD00;font-weight:600;"><span style="width:8px;height:8px;border-radius:50%;background:#FFDD00;display:inline-block;"></span>CH1</span>
-        <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#00FFFF;font-weight:600;"><span style="width:8px;height:8px;border-radius:50%;background:#00FFFF;display:inline-block;"></span>CH2</span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#d97706;font-weight:600;"><span style="width:8px;height:8px;border-radius:50%;background:#d97706;display:inline-block;"></span>CH1</span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#0891b2;font-weight:600;"><span style="width:8px;height:8px;border-radius:50%;background:#0891b2;display:inline-block;"></span>CH2</span>
         <label>Trig Src:
           <select id="mainOscTrigSrc" class="small-input" style="width:60px;">
             <option value="0">CH1</option>
@@ -561,13 +564,13 @@ function esc(v) {
         </label>
         <button id="mainOscAutoBtn" class="primary" style="padding:4px 8px;"><i class="fas fa-wand-magic-sparkles"></i> Auto</button>
         <button id="mainOscFreezeBtn" class="primary" style="padding:4px 8px; background:#4fb583;"><i class="fas fa-snowflake"></i> Freeze</button>
-        <div id="mainOscStats" style="font-family:monospace; font-size:12px; color:#00ff7f; display:flex; gap:10px;">
+        <div id="mainOscStats" style="font-family:monospace; font-size:12px; color:#16a34a; display:flex; gap:10px;">
           <span>Freq: <span id="mainOscFreq">-</span></span>
           <span>Vpp: <span id="mainOscVpp">-</span></span>
         </div>
       </div>
 
-      <div style="border-radius:8px;overflow:hidden;background:#0e1116;padding:6px; position:relative; flex:1; min-height:120px;">
+      <div style="border-radius:8px;overflow:hidden;background:#ffffff;border:1px solid #e2e8f0;padding:6px; position:relative; flex:1; min-height:120px;">
         <canvas id="mainChart"></canvas>
         <canvas id="mainOscCanvas" style="display:none; width:100%; height:100%;"></canvas>
       </div>
@@ -599,10 +602,10 @@ function esc(v) {
 
   <div class="resize-handle-h" id="rowSerialHandle" title="Drag to resize"><i class="fas fa-grip-lines"></i></div>
 
-  <div class="card" id="serialMonitorCard" style="{{ 'display:none' if not ui_config.controls.serial_monitor_section }}">
+  <div class="card" id="serialMonitorCard" style="{{ 'display:none' if not (ui_config.controls.serial_monitor_section or debuggable) }}">
       {% if debuggable %}
       <div class="panel-tabs">
-        <button id="tabSerialMonitor" class="panel-tab active">Serial Monitor</button>
+        <button id="tabSerialMonitor" class="panel-tab active" style="{{ 'display:none' if not ui_config.controls.serial_monitor_section }}">Serial Monitor</button>
         <button id="tabDebugConsole" class="panel-tab">Debug Console</button>
         <button id="tabRegisters" class="panel-tab">Registers</button>
         <button id="tabDisasm" class="panel-tab">Disassembly</button>
@@ -619,7 +622,7 @@ function esc(v) {
         <div class="serial-slot-label">{{ p.label }}</div>
         {% endif %}
         <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
-          <button class="icon-btn" id="clear-{{ p.id }}" style="background:#eef2f8;color:#fff" title="Clear log"><i class="fas fa-broom"></i></button>
+          <button class="icon-btn" id="clear-{{ p.id }}" style="background:#eef2f8;color:#011a38" title="Clear log"><i class="fas fa-broom"></i></button>
         </div>
         <div class="slot-feedback" id="feedback-{{ p.id }}">waiting for device...</div>
         <div style="display:flex;gap:8px;margin-top:8px">
@@ -633,7 +636,7 @@ function esc(v) {
       {% if debuggable %}
       <div id="debugConsoleTab" style="display:none;flex:1;min-height:0;flex-direction:column">
         <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
-          <button class="icon-btn" id="debugConsoleClear" style="background:#eef2f8;color:#fff" title="Clear console"><i class="fas fa-broom"></i></button>
+          <button class="icon-btn" id="debugConsoleClear" style="background:#eef2f8;color:#011a38" title="Clear console"><i class="fas fa-broom"></i></button>
         </div>
         <div class="slot-feedback" id="debugConsoleLog">no debug session active...</div>
       </div>
@@ -915,8 +918,7 @@ let currentUiConfig = uiConfigFromServer; // kept in sync by applyUiConfig() on 
 
   function logConsole(text){
     if (!consoleLog) return;
-    consoleLog.textContent += text.endsWith('\n') ? text : text + '\n';
-    consoleLog.scrollTop = consoleLog.scrollHeight;
+    appendCappedLog(consoleLog, text.endsWith('\n') ? text : text + '\n', DEBUG_CONSOLE_MAX_LINES);
   }
 
   function setConnected(isConnected){
@@ -1325,26 +1327,26 @@ function renderMainOsc() {
       };
 
       // Grid
-      mainOscCtx.strokeStyle = '#3a3a5a';
+      mainOscCtx.strokeStyle = '#e2e8f0';
       mainOscCtx.lineWidth = 1;
       for (let x = 0; x <= w; x += w / 10) { mainOscCtx.beginPath(); mainOscCtx.moveTo(x, 0); mainOscCtx.lineTo(x, h); mainOscCtx.stroke(); }
       for (let y = 0; y <= h; y += h / 8) { mainOscCtx.beginPath(); mainOscCtx.moveTo(0, y); mainOscCtx.lineTo(w, y); mainOscCtx.stroke(); }
 
       // 0V Level (1.65V offset)
       const zeroY = voltToY(1.65);
-      mainOscCtx.strokeStyle = '#ffff00';
+      mainOscCtx.strokeStyle = '#a16207';
       mainOscCtx.lineWidth = 1;
       mainOscCtx.setLineDash([4, 4]);
       mainOscCtx.beginPath(); mainOscCtx.moveTo(0, zeroY); mainOscCtx.lineTo(w, zeroY); mainOscCtx.stroke();
       mainOscCtx.setLineDash([]);
-      mainOscCtx.fillStyle = '#ffff00';
+      mainOscCtx.fillStyle = '#a16207';
       mainOscCtx.font = '10px monospace';
       mainOscCtx.fillText('1.65V (0V)', 10, zeroY - 5);
 
       // Trigger Level
       const trigV = parseFloat(document.getElementById('mainOscTrigV').value || 1.65);
       const trigY = voltToY(trigV);
-      mainOscCtx.strokeStyle = '#ff5555';
+      mainOscCtx.strokeStyle = '#dc2626';
       mainOscCtx.lineWidth = 1;
       mainOscCtx.setLineDash([6, 4]);
       mainOscCtx.beginPath(); mainOscCtx.moveTo(0, trigY); mainOscCtx.lineTo(w, trigY); mainOscCtx.stroke();
@@ -1352,8 +1354,8 @@ function renderMainOsc() {
 
       // Waveforms — CH1 (yellow), CH2 (cyan)
       const visibleCount = Math.floor(Math.min(ch1.length, ch2.length) / hScale);
-      renderMainOscCurve(ch1, visibleCount, w, voltToY, '#FFDD00');
-      renderMainOscCurve(ch2, visibleCount, w, voltToY, '#00FFFF');
+      renderMainOscCurve(ch1, visibleCount, w, voltToY, '#d97706');
+      renderMainOscCurve(ch2, visibleCount, w, voltToY, '#0891b2');
     }
   }
   requestAnimationFrame(renderMainOsc);
@@ -1487,13 +1489,22 @@ let lastSelectedKey1 = ''; // track last selected key to clear chart when change
 // tracks its own connection/UI state, keyed by conn_id (the profile's id).
 const serialSlots = {};
 
+const SERIAL_MONITOR_MAX_LINES = 300;
+const DEBUG_CONSOLE_MAX_LINES = 1000;
+
+/* Appends one entry to a log box, dropping the oldest past maxLines. One text
+   node per entry, so trimming never re-reads or rewrites the whole log (the
+   old innerText += / split / join did, on every line). */
+function appendCappedLog(el, text, maxLines){
+  el.appendChild(document.createTextNode(text));
+  while (el.childNodes.length > maxLines) el.removeChild(el.firstChild);
+  el.scrollTop = el.scrollHeight;
+}
+
 function slotFeedbackAdd(slot, text){
   if (!slot.feedbackEl) return;
   const prefix = (new Date()).toLocaleTimeString() + ' ';
-  slot.feedbackEl.innerText += prefix + text + '\n';
-  const lines = slot.feedbackEl.innerText.split('\n');
-  if(lines.length > 300) slot.feedbackEl.innerText = lines.slice(-300).join('\n');
-  slot.feedbackEl.scrollTop = slot.feedbackEl.scrollHeight;
+  appendCappedLog(slot.feedbackEl, prefix + text + '\n', SERIAL_MONITOR_MAX_LINES);
 }
 
 // Drives the sidebar Connection section's status dot + label — separate from
@@ -1507,9 +1518,27 @@ function setSlotStatus(slot, state){
   updateSerialPill();
 }
 
+// Whether the lab administrator has locked this slot's Connect/Disconnect
+// button: the node-wide "serial_connect" switch locks every port, and a port's
+// own "Students can disconnect" off locks it once it's connected. Everything
+// that re-enables the button goes through syncSlotButtonLock, so a
+// serial_status update can't unlock a button the admin switched off.
+function slotButtonLocked(slot){
+  if (!(currentUiConfig.controls || {}).serial_connect) return true;
+  return slot.connected && !slot.allowDisconnect;
+}
+function syncSlotButtonLock(slot){
+  const locked = slotButtonLocked(slot);
+  slot.connectBtn.disabled = locked;
+  slot.connectBtn.classList.toggle('admin-disabled', locked);
+  slot.connectBtn.title = !locked ? ''
+    : ((currentUiConfig.controls || {}).serial_connect ? 'Disconnect locked by lab administrator'
+                                                        : 'Disabled by lab administrator');
+}
+
 function doSlotConnect(slot){
+  if (slotButtonLocked(slot)) return;
   if (slot.connected) {
-    if (!slot.allowDisconnect) return; // disconnect locked by admin for this port
     socket.emit('disconnect_serial', { conn_id: slot.connId });
     slotFeedbackAdd(slot, 'Requested disconnect.');
     return;
@@ -1525,7 +1554,7 @@ function doSlotConnect(slot){
   if (slot.connectTimeoutHandle) clearTimeout(slot.connectTimeoutHandle);
   slot.connectTimeoutHandle = setTimeout(() => {
     slotFeedbackAdd(slot, '⚠️ Serial connect timed out (no response).');
-    slot.connectBtn.disabled = false;
+    syncSlotButtonLock(slot);
     slot.connectBtn.innerHTML = '<i class="fas fa-plug"></i> Connect';
   }, 6000);
 }
@@ -1535,7 +1564,7 @@ function doSlotConnect(slot){
 // with auto-connect are connected server-side instead (see sync_serial_profiles).
 function maybeAutoConnectSlot(slot){
   if (slot.autoConnectAttempted || slot.connected) return;
-  if (!uiConfigFromServer.controls.serial_connect) return;
+  if (!(currentUiConfig.controls || {}).serial_connect) return;
   if (!slot.autoConnect) return;
   if (!slot.portSelect || !slot.portSelect.value) return; // no port detected yet
   slot.autoConnectAttempted = true;
@@ -1600,7 +1629,7 @@ function initSerialSlots(){
       slot.resetBtn.textContent = 'Resetting...';
       if (slot.resetTimeoutHandle) clearTimeout(slot.resetTimeoutHandle);
       slot.resetTimeoutHandle = setTimeout(() => {
-        slot.resetBtn.disabled = !uiConfigFromServer.controls.serial_connect;
+        slot.resetBtn.disabled = !(currentUiConfig.controls || {}).serial_connect;
         slot.resetBtn.textContent = originalText;
       }, 900);
     });
@@ -1746,9 +1775,8 @@ socket.on('serial_status', (info) => {
   if (slot.connectTimeoutHandle) { clearTimeout(slot.connectTimeoutHandle); slot.connectTimeoutHandle = null; }
   if (info.status === 'connected') {
     slot.connected = true;
-    slot.connectBtn.disabled = !slot.allowDisconnect;
+    syncSlotButtonLock(slot);
     slot.connectBtn.innerHTML = slot.allowDisconnect ? '<i class="fas fa-plug-circle-xmark"></i> Disconnect' : '<i class="fas fa-check"></i> Connected';
-    slot.connectBtn.title = slot.allowDisconnect ? '' : 'Disconnect locked by lab administrator';
     slot.connectBtn.style.background = '#e07575';
     slot.connectBtn.style.color = '#fff';
     slotFeedbackAdd(slot, `✅ Connected: ${info.port}@${info.baud}`);
@@ -1757,7 +1785,7 @@ socket.on('serial_status', (info) => {
     updateYAxisFilterOptions([]); // prepare Y-axis dropdowns for dynamic data
   } else if (info.status === 'error') {
     slot.connected = false;
-    slot.connectBtn.disabled = false;
+    syncSlotButtonLock(slot);
     slot.connectBtn.innerHTML = '<i class="fas fa-plug"></i> Connect';
     slot.connectBtn.style.background = '#4fb583';
     slot.connectBtn.style.color = '#fff';
@@ -1765,7 +1793,7 @@ socket.on('serial_status', (info) => {
     setSlotStatus(slot, 'error');
   } else {
     slot.connected = false;
-    slot.connectBtn.disabled = false;
+    syncSlotButtonLock(slot);
     slot.connectBtn.innerHTML = '<i class="fas fa-plug"></i> Connect';
     slot.connectBtn.style.background = '#4fb583';
     slot.connectBtn.style.color = '#fff';
@@ -1803,6 +1831,7 @@ function showControlDialog(opts) {
     box.appendChild(heading);
 
     const inputs = {};
+    const rows = [];
     (opts.fields || []).forEach((f) => {
       const row = document.createElement('div');
       row.className = 'control-dialog-row';
@@ -1837,7 +1866,18 @@ function showControlDialog(opts) {
       }
       box.appendChild(row);
       inputs[f.key] = inp;
+      if (f.showWhen) rows.push({ row, showWhen: f.showWhen });
     });
+
+    // Fields with showWhen: {key, value} only show while that other field has that value
+    const updateVisibility = () => {
+      rows.forEach(({ row, showWhen }) => {
+        const src = inputs[showWhen.key];
+        row.classList.toggle('cd-hidden', !src || src.value !== showWhen.value);
+      });
+    };
+    Object.values(inputs).forEach((inp) => inp.addEventListener('change', updateVisibility));
+    updateVisibility();
 
     const btnRow = document.createElement('div');
     btnRow.className = 'control-dialog-btns';
@@ -1908,6 +1948,7 @@ function createControlElement(cfg){
   content.style.gap='6px';
 
   const label = document.createElement('div');
+  label.className = 'control-label';
   label.innerText = cfg.label;
   label.style.fontWeight='700';
   label.style.minWidth='100px';
@@ -1919,7 +1960,7 @@ function createControlElement(cfg){
     removeBtn.innerHTML = '<i class="fas fa-xmark"></i>';
     removeBtn.title = 'Remove control';
     removeBtn.style.cssText = 'width:22px;height:22px;padding:0;border-radius:50%;border:none;background:#e07575;color:#f4f6fa;font-size:11px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin-left:8px;';
-    removeBtn.onclick = () => { wrapper.remove(); saveLayoutToStorage(); };
+    removeBtn.onclick = () => { removeControlRow(wrapper); saveLayoutToStorage(); };
   }
 
   /* ============ SLIDER CONTROL ============ */
@@ -1962,6 +2003,61 @@ function createControlElement(cfg){
 
     content.appendChild(slider);
     content.appendChild(valSpan);
+  }
+
+  /* ============ PUSH BUTTON CONTROL (momentary: press / release) ============ */
+  else if(cfg.type === 'button' && cfg.buttonMode === 'momentary'){
+    const pressCmd = cfg.pressCmd !== undefined ? cfg.pressCmd : '1';
+    const releaseCmd = cfg.releaseCmd !== undefined ? cfg.releaseCmd : '0';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'primary push-button';
+    btn.innerText = cfg.label || 'PUSH';
+    btn.style.minWidth = '120px';
+    btn.setAttribute('data-button-mode', 'momentary');
+    btn.setAttribute('data-press-cmd', pressCmd);
+    btn.setAttribute('data-release-cmd', releaseCmd);
+
+    const send = (cmd) => {
+      if (cmd === '') return;
+      // cfg.portId locks this control to a specific board; blank = primary target.
+      socket.emit('send_command', cfg.portId ? { cmd, conn_id: cfg.portId } : { cmd });
+    };
+    // The held flag makes press/release strictly alternate, however many of
+    // pointerup / pointerleave / blur etc. fire for a single let-go.
+    let held = false;
+    const release = () => {
+      if (!held) return;
+      held = false;
+      btn.classList.remove('pressed');
+      heldPushButtons.delete(release);
+      send(releaseCmd);
+    };
+    const press = () => {
+      if (held) return;
+      held = true;
+      btn.classList.add('pressed');
+      heldPushButtons.add(release);
+      send(pressCmd);
+    };
+    wrapper._releasePush = release;
+
+    btn.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return; // left mouse / touch / pen only
+      e.preventDefault();
+      press();
+    });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => btn.addEventListener(ev, release));
+    btn.addEventListener('contextmenu', (e) => e.preventDefault()); // mobile long-press menu
+    btn.addEventListener('keydown', (e) => {
+      if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); press(); }
+    });
+    btn.addEventListener('keyup', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); release(); }
+    });
+    btn.addEventListener('blur', release);
+    content.appendChild(btn);
   }
 
  /* ============ TOGGLE BUTTON CONTROL (send only your custom commands) ============ */
@@ -2013,13 +2109,32 @@ else if(cfg.type === 'button'){
   dynamicControls.appendChild(wrapper);
 }
 
+/* Push buttons currently held down, as their release functions. A release
+   that never reaches the board leaves its output stuck on, so every way a
+   student can let go without a pointerup (tab switch, window blur, page
+   close, dropped socket) releases them too. socket.io buffers emits while
+   disconnected, so a release queued on disconnect is sent on reconnect. */
+const heldPushButtons = new Set();
+function releaseAllPushButtons() {
+  Array.from(heldPushButtons).forEach(release => release());
+}
+window.addEventListener('blur', releaseAllPushButtons);
+window.addEventListener('pagehide', releaseAllPushButtons);
+document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAllPushButtons(); });
+
+// Removes a control row, releasing it first if it's a push button being held
+function removeControlRow(row) {
+  if (row._releasePush) row._releasePush();
+  row.remove();
+}
+
 /* Admin-required controls: always present, not removable/editable by students.
    Diffed by data-required-id so it's safe to call on every ui_config update. */
 function renderRequiredControls(list) {
   if (!dynamicControls) return;
   const incomingIds = new Set((list || []).map(c => c.id));
   dynamicControls.querySelectorAll('.locked-control').forEach(row => {
-    if (!incomingIds.has(row.dataset.requiredId)) row.remove();
+    if (!incomingIds.has(row.dataset.requiredId)) removeControlRow(row);
   });
   const existingIds = new Set(Array.from(dynamicControls.querySelectorAll('.locked-control')).map(row => row.dataset.requiredId));
   (list || []).forEach(cfg => {
@@ -2075,14 +2190,28 @@ addButtonBtn.addEventListener('click', async () => {
     title: 'Add Button',
     submitLabel: 'Add Button',
     fields: [
-      { key: 'label', label: 'Label', value: 'TOGGLE_BUTTON' },
-      { key: 'onCmd', label: 'ON command', value: '1' },
-      { key: 'offCmd', label: 'OFF command', value: '0' },
+      { key: 'buttonMode', label: 'Button type', type: 'select', value: 'toggle',
+        options: [
+          { value: 'toggle', label: 'Switch (click ON / click OFF)' },
+          { value: 'momentary', label: 'Push button (ON while held)' },
+        ] },
+      { key: 'label', label: 'Label', value: 'BUTTON' },
+      { key: 'onCmd', label: 'ON command', value: '1', showWhen: { key: 'buttonMode', value: 'toggle' } },
+      { key: 'offCmd', label: 'OFF command', value: '0', showWhen: { key: 'buttonMode', value: 'toggle' } },
+      { key: 'pressCmd', label: 'Press command', value: '1', showWhen: { key: 'buttonMode', value: 'momentary' },
+        hint: 'Sent when you press the button' },
+      { key: 'releaseCmd', label: 'Release command', value: '0', showWhen: { key: 'buttonMode', value: 'momentary' },
+        hint: 'Sent when you let go' },
     ],
   });
   if (!result) return;
-  const label = (result.label || 'TOGGLE_BUTTON').trim() || 'TOGGLE_BUTTON';
-  createControlElement({ type: 'button', label, onCmd: result.onCmd || '', offCmd: result.offCmd || '' });
+  const label = (result.label || 'BUTTON').trim() || 'BUTTON';
+  if (result.buttonMode === 'momentary') {
+    createControlElement({ type: 'button', buttonMode: 'momentary', label,
+                           pressCmd: result.pressCmd || '', releaseCmd: result.releaseCmd || '' });
+  } else {
+    createControlElement({ type: 'button', label, onCmd: result.onCmd || '', offCmd: result.offCmd || '' });
+  }
   saveLayoutToStorage();
 });
 
@@ -2101,7 +2230,7 @@ function saveLayoutToStorage() {
   
   rows.forEach(r => {
     if(r.querySelector('input[type="range"]')) {
-      const labelDiv = r.querySelector('div');
+      const labelDiv = r.querySelector('.control-label');
       const label = labelDiv ? labelDiv.innerText : '';
       const sliderEl = r.querySelector('input[type="range"]');
       const dataKey = sliderEl.getAttribute('data-key') || '';
@@ -2113,19 +2242,24 @@ function saveLayoutToStorage() {
       seen.add(key);
       arr.push({type:'slider', label: label, dataKey: dataKey, min: sliderEl.min, max: sliderEl.max, cmdFormat: cmdFormat, precision: precision});
     } else if(r.querySelector('button.primary')) {
-      const label = r.querySelector('div').innerText;
+      const label = r.querySelector('.control-label').innerText;
       // Skip duplicate controls with same label
       const key = 'button:' + label;
       if (seen.has(key)) return;
       seen.add(key);
-      const sel = r.querySelector('select');
       const btnEl = r.querySelector('button.primary');
+      if (btnEl.getAttribute('data-button-mode') === 'momentary') {
+        arr.push({type:'button', buttonMode:'momentary', label: label,
+                  pressCmd: btnEl.getAttribute('data-press-cmd'), releaseCmd: btnEl.getAttribute('data-release-cmd')});
+        return;
+      }
+      const sel = r.querySelector('select');
       const onCmd = btnEl.getAttribute('data-on-cmd');
       const offCmd = btnEl.getAttribute('data-off-cmd');
       arr.push({type:'button', label: label, dataKey: sel ? sel.value : '', onCmd: onCmd !== null ? onCmd : undefined, offCmd: offCmd !== null ? offCmd : undefined});
     } else if(r.querySelector('.readout-value')) {
       const key = r.querySelector('.readout-value').getAttribute('data-key');
-      const labelEl = r.querySelector('div');
+      const labelEl = r.querySelector('.control-label');
       const label = labelEl ? labelEl.innerText : key;
       // Skip duplicate controls with same label
       const uniqKey = 'readout:' + label;
@@ -2147,7 +2281,7 @@ let layoutLoadedThisPage = false;
 // Removes only student-added rows, preserving admin-required (locked) controls
 function clearUserControls() {
   if (!dynamicControls) return;
-  dynamicControls.querySelectorAll('.control-row:not(.locked-control)').forEach(row => row.remove());
+  dynamicControls.querySelectorAll('.control-row:not(.locked-control)').forEach(removeControlRow);
 }
 
 // Auto-load layout when sensor data becomes available (after serial connects)
@@ -2192,6 +2326,7 @@ function clearLayoutOnSessionEnd() {
 
 // Handle page close/refresh - disconnect serial and turn off relay
 window.addEventListener('beforeunload', (e) => {
+  releaseAllPushButtons(); // before the serial slots go away
   // Try to disconnect every serial slot
   try {
     Object.keys(serialSlots).forEach(connId => socket.emit('disconnect_serial', { conn_id: connId }));
@@ -2220,13 +2355,13 @@ const chart = new Chart(chartCtx, {
   type: 'line',
   data: { labels: [], datasets: [
     { label: 'Series 1', data: [], borderColor: '#011a38', borderWidth: 2, pointRadius: 0, fill: false, yAxisID: 'y' },
-    { label: 'Series 2', data: [], borderColor: '#00ff7f', borderWidth: 2, pointRadius: 0, fill: false, yAxisID: 'y1', hidden: true }
+    { label: 'Series 2', data: [], borderColor: '#16a34a', borderWidth: 2, pointRadius: 0, fill: false, yAxisID: 'y1', hidden: true }
   ]},
   options: {
     animation: false, responsive: true, maintainAspectRatio: false,
     scales: {
-      x: { display: true, grid: { color: '#222' }, title: { display:true, text: 'Time (s)' } },
-      y: { display: true, position: 'left', grid: { color: '#333' }, title: { display:true, text: 'Series 1' }, beginAtZero: true, min: 0 },
+      x: { display: true, grid: { color: '#e5e7eb' }, title: { display:true, text: 'Time (s)' } },
+      y: { display: true, position: 'left', grid: { color: '#e5e7eb' }, title: { display:true, text: 'Series 1' }, beginAtZero: true, min: 0 },
       y1: { display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display:true, text: 'Series 2 (Disabled)' }, beginAtZero: true, min: 0 }
     },
     plugins: {
@@ -2493,13 +2628,17 @@ socket.on('sensor_data', (msg) => {
   const val2 = filterSpike(rawVal2, lastVal2);
 
   // Add to chart buffer if we have data
-  if (val1 !== null || val2 !== null) {
+  // Only queue while the chart is running, and never more than it can show:
+  // chartLoop drains this on animation frames, which stop in a background
+  // tab, so an uncapped queue grew for as long as the tab was hidden/paused.
+  if (running && (val1 !== null || val2 !== null)) {
     chartBuffer.push({
       ts: Date.now(),
       sampleCount,
       value1: val1,
       value2: val2
     });
+    if (chartBuffer.length > visiblePoints) chartBuffer.splice(0, chartBuffer.length - visiblePoints);
   }
 });
 
@@ -2637,7 +2776,7 @@ exportCSVBtn.addEventListener('click', () => {
 
 /* ----------------- Socket / connection logging ----------------- */
 socket.on('connect', () => { socketConnected = true; console.log('Socket connected'); requestPorts(); });
-socket.on('disconnect', (reason) => { socketConnected = false; console.log('Socket disconnected: ' + (reason||'unknown')); });
+socket.on('disconnect', (reason) => { socketConnected = false; releaseAllPushButtons(); console.log('Socket disconnected: ' + (reason||'unknown')); });
 socket.on('connect_error', (err) => { console.log('Socket connect error: ' + String(err)); });
 
 /* ----------------- Real-time board type update from Admin Pi ----------------- */
@@ -2677,7 +2816,7 @@ function applyUiConfig(cfg) {
   setDisabled(document.getElementById('flashBtn'), !controls.flash_firmware);
   setDisabled(document.getElementById('firmwareInput'), !controls.flash_firmware);
   setDisabled(document.getElementById('firmwareBrowseBtn'), !controls.flash_firmware);
-  document.querySelectorAll('.slot-connect').forEach(btn => setDisabled(btn, !controls.serial_connect));
+  Object.values(serialSlots).forEach(syncSlotButtonLock);
   document.querySelectorAll('.slot-reset').forEach(btn => setDisabled(btn, !controls.serial_connect));
   setDisabled(document.getElementById('factoryResetBtn'), !controls.factory_reset);
   setDisabled(document.getElementById('powerSupplyBtn'), !controls.power_supply);
@@ -2691,8 +2830,21 @@ function applyUiConfig(cfg) {
     nameCenterEl.style.display = cfg.experiment_name ? '' : 'none';
   }
 
+  // On a debuggable board this card also holds the Debug tabs, so turning the
+  // Serial Monitor off hides only its own tab there, not the whole card.
   const serialMonitorCard = document.getElementById('serialMonitorCard');
-  if (serialMonitorCard) serialMonitorCard.style.display = controls.serial_monitor_section ? '' : 'none';
+  const serialMonitorTabBtn = document.getElementById('tabSerialMonitor');
+  const monitorOn = !!controls.serial_monitor_section;
+  if (serialMonitorTabBtn) {
+    serialMonitorTabBtn.style.display = monitorOn ? '' : 'none';
+    if (!monitorOn && serialMonitorTabBtn.classList.contains('active')) {
+      const debugTabBtn = document.getElementById('tabDebugConsole');
+      if (debugTabBtn) debugTabBtn.click();
+    }
+    if (serialMonitorCard) serialMonitorCard.style.display = '';
+  } else if (serialMonitorCard) {
+    serialMonitorCard.style.display = monitorOn ? '' : 'none';
+  }
 
   const chartCard = document.getElementById('chartCard');
   if (chartCard) chartCard.style.display = (controls.serial_plotter || controls.oscilloscope) ? '' : 'none';

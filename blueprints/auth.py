@@ -5,6 +5,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 
 from models import PasswordResetToken, SystemLog, User, db, utcnow
 from services import mailer
+from app import limiter
 from werkzeug.security import check_password_hash, generate_password_hash
 import secrets
 from urllib.parse import urlparse
@@ -92,6 +93,7 @@ def _establish_session(user, remember, where):
 
 
 @bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("5 per minute", methods=["POST"])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("portal.dashboard"))
@@ -127,6 +129,7 @@ def login():
 
 
 @bp.route("/admin/login", methods=["GET", "POST"])
+@limiter.limit("5 per minute", methods=["POST"])
 def admin_login():
     """A separate door for staff.
 
@@ -218,6 +221,7 @@ def change_password():
 
 
 @bp.route("/forgot-password", methods=["GET", "POST"])
+@limiter.limit("5 per minute", methods=["POST"])
 def forgot_password():
     if request.method == "POST":
         email = (request.form.get("email") or "").strip().lower()
@@ -237,6 +241,7 @@ def forgot_password():
 
 
 @bp.route("/reset-password/<token>", methods=["GET", "POST"])
+@limiter.limit("5 per minute", methods=["POST"])
 def reset_password(token):
     record = PasswordResetToken.query.filter_by(token=token).first()
     if not record or not record.is_valid:

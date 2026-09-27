@@ -280,6 +280,13 @@ class OTAUpdate(db.Model):
 
 class Booking(db.Model):
     __tablename__ = "bookings"
+    __table_args__ = (
+        # F-16: no two live bookings may hold the same experiment + start time.
+        # Partial index so cancelled/completed rows don't block rebooking.
+        db.Index("uq_booking_live_slot", "experiment_id", "start_time",
+                 unique=True,
+                 sqlite_where=db.text("status NOT IN ('cancelled', 'completed')")),
+    )
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(12), unique=True, nullable=False, default=_code)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)

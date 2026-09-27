@@ -118,6 +118,13 @@ def validate(rows):
             problems.append(f"Row {i}: unknown course code(s) {', '.join(unknown)} - ignored.")
 
         role = (row.get("role") or "user").strip().lower()
+        if role == "admin":
+            # F-26: never create administrators from a bulk upload. Admin
+            # accounts must be made deliberately in the UI, not swept in from
+            # a spreadsheet. The row is imported as an ordinary user.
+            problems.append(f"Row {i}: role 'admin' is not allowed in bulk "
+                            f"import - created as a normal user instead.")
+            role = "user"
         clean.append({
             "full_name": name,
             "email": email,
