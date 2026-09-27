@@ -55,9 +55,9 @@ SystemCallErrorNumber=EPERM
 CapabilityBoundingSet=
 AmbientCapabilities=
 
-# Only these three are writable. Everything else, including the source and
-# the virtualenv, is read-only to the service.
-ReadWritePaths=__APP_DIR__/data __APP_DIR__/uploads __APP_DIR__/static/sop
+# Only these two are writable (lab manuals are in data/sop/). Everything
+# else, including the source, static/ and the virtualenv, is read-only.
+ReadWritePaths=__APP_DIR__/data __APP_DIR__/uploads
 
 # Bounds, so the resource-exhaustion paths cannot take the host with them.
 MemoryMax=1G

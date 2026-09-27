@@ -87,6 +87,15 @@ def create_app(config_object=Config):
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
     )
 
+    # Manuals used to be kept in static/sop/, where they were public. Anything
+    # still there is still public, and no longer found by the portal.
+    legacy_sop = BASE_DIR / "static" / "sop"
+    if legacy_sop.is_dir() and any(legacy_sop.glob("*.pdf")):
+        app.logger.warning(
+            "static/sop/ still holds PDFs, which are served without sign-in. "
+            "Move them to %s and run `python manage.py scan-manuals` - see DEPLOY.md.",
+            app.config["SOP_FOLDER"])
+
     db.init_app(app)
     mail.init_app(app)
     login_manager.init_app(app)

@@ -49,12 +49,13 @@ else
 fi
 
 say "Preparing directories"
-mkdir -p data uploads static/sop
+mkdir -p data/sop uploads
 # The source tree and the virtualenv stay root-owned and read-only to the
 # service, so a file-write primitive in the web tier cannot become code
-# execution on the next restart. Only the three data directories are writable.
+# execution on the next restart. Only the two data directories are writable.
+# Lab manuals live in data/sop/, not static/, so they are never public.
 chown -R root:root "$APP_DIR"
-chown -R "$RUN_USER":"$RUN_USER" "$APP_DIR/data" "$APP_DIR/uploads" "$APP_DIR/static/sop"
+chown -R "$RUN_USER":"$RUN_USER" "$APP_DIR/data" "$APP_DIR/uploads"
 
 if [ ! -f .env ]; then
   say "Generating .env"

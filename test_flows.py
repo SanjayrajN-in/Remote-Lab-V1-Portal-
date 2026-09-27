@@ -83,6 +83,65 @@ def login(client, email, password):
                        follow_redirects=True)
 
 
+def make_pdf(kind="latex"):
+    """A small PDF built the way pdflatex+hyperref builds one (object streams,
+    /OpenAction to a page destination, GoTo/URI/Named links), optionally with
+    one hostile addition. Returns bytes."""
+    import pikepdf
+    from pikepdf import Array, Dictionary, Name, String
+    pdf = pikepdf.new()
+    pdf.add_blank_page()
+    pdf.add_blank_page()
+    first, second = pdf.pages[0].obj, pdf.pages[1].obj
+    pdf.Root.OpenAction = Array([first, Name.Fit])
+    pdf.Root.PageLabels = Dictionary(Nums=Array([0, Dictionary(S=Name.D)]))
+    links = Array([
+        Dictionary(Type=Name.Annot, Subtype=Name.Link, Rect=[0, 0, 9, 9],
+                   BS=Dictionary(S=Name.S, W=0),
+                   A=Dictionary(S=Name.URI, URI=String("https://ctan.org/pkg/hyperref"))),
+        Dictionary(Type=Name.Annot, Subtype=Name.Link, Rect=[0, 0, 9, 9],
+                   A=Dictionary(S=Name.GoTo, D=Array([second, Name.Fit]))),
+        Dictionary(Type=Name.Annot, Subtype=Name.Link, Rect=[0, 0, 9, 9],
+                   A=Dictionary(S=Name.Named, N=Name.NextPage)),
+    ])
+    pdf.pages[0].Annots = pdf.make_indirect(links)
+    js = Dictionary(S=Name.JavaScript, JS=String("app.alert(1)"))
+    if kind == "openaction-js":
+        pdf.Root.OpenAction = pdf.make_indirect(js)
+    elif kind == "names-js":
+        pdf.Root.Names = Dictionary(JavaScript=Dictionary(Names=Array([String("x"), js])))
+    elif kind == "next-js":
+        pdf.Root.OpenAction = Dictionary(S=Name.GoTo, D=Array([first, Name.Fit]), Next=js)
+    elif kind == "page-aa":
+        pdf.pages[0].AA = Dictionary(O=js)
+    elif kind == "launch":
+        links.append(Dictionary(Type=Name.Annot, Subtype=Name.Link, Rect=[0, 0, 9, 9],
+                                A=Dictionary(S=Name.Launch, F=String("cmd.exe"))))
+    elif kind == "js-uri":
+        links.append(Dictionary(Type=Name.Annot, Subtype=Name.Link, Rect=[0, 0, 9, 9],
+                                A=Dictionary(S=Name.URI, URI=String("javascript:alert(1)"))))
+    elif kind == "embedded":
+        pdf.attachments["tool.exe"] = pikepdf.AttachedFileSpec(pdf, b"MZ", filename="tool.exe")
+    out = io.BytesIO()
+    if kind == "encrypted":
+        pdf.save(out, encryption=pikepdf.Encryption(owner="o", user=""))
+    elif kind == "obfuscated":
+        # Uncompressed, with the names hex-escaped: invisible to a byte grep.
+        pdf.Root.OpenAction = js
+        pdf.save(out, qdf=True, compress_streams=False)
+        return (out.getvalue().replace(b"/S /JavaScript", b"/S /J#61vaScript")
+                .replace(b"/JS (", b"/J#53 ("))
+    else:
+        pdf.save(out, object_stream_mode=pikepdf.ObjectStreamMode.generate)
+    return out.getvalue()
+
+
+# The file the VAPT team uploaded, byte for byte.
+VAPT_PDF = (b"%PDF-1.7\n        1 0 obj\n        <</Pages 1 0 R /OpenAction 2 0 R>>\n"
+            b"        2 0 obj\n        <</S /JavaScript /JS (app.alert(1))>> \n"
+            b"        trailer\n        <</Root 1 0 R>>\n")
+
+
 def main():
     tmp = tempfile.mkdtemp()
     app = build_app(tmp)
@@ -702,6 +761,102 @@ def main():
         r = c.post("/change-password", follow_redirects=True,
                    data={"new_password": "my-new-password", "confirm_password": "my-new-password"})
         check("password change succeeds", b"Password updated" in r.data)
+
+    print("\nAdmin: lab manual upload")
+    from services.pdfguard import UnsafePDF, check_pdf
+    sop = app.config["SOP_FOLDER"]
+
+    def verdict(data):
+        path = Path(tmp) / "probe.pdf"
+        path.write_bytes(data)
+        try:
+            check_pdf(path)
+            return "ok"
+        except UnsafePDF as e:
+            return str(e)
+
+    check("LaTeX/hyperref-style manual passes the check", verdict(make_pdf()) == "ok",
+          verdict(make_pdf()))
+    for kind, word in (("openaction-js", b"JavaScript"), ("names-js", b"JavaScript"),
+                       ("next-js", b"JavaScript"), ("obfuscated", b"JavaScript"),
+                       ("page-aa", b"automatic actions"), ("launch", b"Launch"),
+                       ("js-uri", b"not http"), ("embedded", b"embedded files"),
+                       ("encrypted", b"encrypted")):
+        v = verdict(make_pdf(kind))
+        check(f"manual with {kind} is refused", word.decode() in v, v)
+    check("the VAPT test file is refused", verdict(VAPT_PDF) != "ok")
+    check("a text file named .pdf is refused", verdict(b"qqqqqqq") != "ok")
+    check("manuals are not kept under static/",
+          "static" not in Config.SOP_FOLDER.relative_to(Config.SOP_FOLDER.parents[1]).parts)
+
+    def upload(c, url, data, filename="manual.pdf", **form):
+        form["sop_pdf"] = (io.BytesIO(data), filename)
+        return c.post(url, data=form, content_type="multipart/form-data",
+                      follow_redirects=True)
+
+    with app.test_client() as c:
+        login(c, "admin@t.edu", "adminpass1")
+
+        r = upload(c, "/admin/experiments", VAPT_PDF, name="VAPT Probe", slug="vapt-probe")
+        with app.app_context():
+            added = Experiment.query.filter_by(slug="vapt-probe").first()
+            logged = SystemLog.query.filter(
+                SystemLog.message.like("Lab manual refused for vapt-probe%")).first()
+        check("hostile manual is refused on create", b"not added" in r.data)
+        check("refused create adds no experiment", added is None)
+        check("refused create leaves no file", not (sop / "vapt-probe.pdf").exists())
+        check("refused upload is logged", logged is not None and logged.level == "warning")
+
+        r = upload(c, "/admin/experiments", make_pdf("openaction-js"),
+                   name="JS Probe", slug="js-probe")
+        check("well-formed JavaScript manual is refused with a reason",
+              b"contains a JavaScript action" in r.data)
+
+        r = upload(c, "/admin/experiments", make_pdf(), name="Op Amps", slug="op-amps")
+        with app.app_context():
+            ops = Experiment.query.filter_by(slug="op-amps").first()
+        check("LaTeX manual is accepted on create",
+              ops is not None and ops.sop_pdf == "op-amps.pdf" and (sop / "op-amps.pdf").exists())
+
+        good = (sop / "op-amps.pdf").read_bytes()
+        r = upload(c, f"/admin/experiments/{ops.id}/edit", make_pdf("launch"),
+                   name="Renamed Op Amps")
+        with app.app_context():
+            after = db.session.get(Experiment, ops.id)
+        check("hostile manual is refused on edit (was silently skipped)",
+              b"Nothing was saved" in r.data and b"Changes saved" not in r.data)
+        check("refused edit keeps the previous manual", (sop / "op-amps.pdf").read_bytes() == good)
+        check("refused edit saves no other field", after.name == "Op Amps")
+
+        new = make_pdf()
+        r = upload(c, f"/admin/experiments/{ops.id}/edit", new, name="Op Amps")
+        check("valid manual replaces the old one on edit",
+              b"Changes saved" in r.data and (sop / "op-amps.pdf").read_bytes() == new)
+
+        r = upload(c, f"/admin/experiments/{ops.id}/edit", make_pdf(), filename="manual.exe",
+                   name="Op Amps")
+        check("non-.pdf filename is refused", b"must be a .pdf file" in r.data)
+
+        app.config["SOP_MAX_BYTES"], limit = 1024, app.config["SOP_MAX_BYTES"]
+        r = upload(c, f"/admin/experiments/{ops.id}/edit", make_pdf() + b" " * 2048,
+                   name="Op Amps")
+        app.config["SOP_MAX_BYTES"] = limit
+        check("oversized manual is refused", b"larger than" in r.data)
+
+        with mock.patch("blueprints.admin.magic.from_buffer", side_effect=RuntimeError):
+            r = upload(c, f"/admin/experiments/{ops.id}/edit", make_pdf(), name="Op Amps")
+        check("a libmagic failure refuses the upload", b"could not be checked" in r.data)
+
+        check("no temporary upload files are left behind",
+              not list(sop.glob(".upload-*")), [p.name for p in sop.glob(".upload-*")])
+
+    with app.test_client() as c:
+        login(c, "asha@t.edu", "studentpass1")
+        r = c.get(f"/experiment/{ids['e1']}/manual")
+        check("manual download is sandboxed",
+              r.headers.get("Content-Security-Policy") == "sandbox")
+        r = c.get("/static/sop/dc-motor.pdf")
+        check("manuals are not reachable under /static/", r.status_code == 404)
 
     print("\nAdmin: devices added by IP")
     with app.test_client() as c:

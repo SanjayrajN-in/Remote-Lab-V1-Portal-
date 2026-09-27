@@ -5,6 +5,7 @@
     python manage.py make-admin someone@iisc.ac.in
     python manage.py list-admins
     python manage.py unlock admin@vlab.edu
+    python manage.py scan-manuals
 
 `reset-password` is the one that matters: re-running install.sh does not touch
 an existing admin's password, so if the original was lost there was previously
@@ -21,7 +22,8 @@ import secrets
 import sys
 
 from app import create_app
-from models import SystemLog, User, db, utcnow
+from models import Experiment, SystemLog, User, db, utcnow
+from services.pdfguard import UnsafePDF, check_pdf
 
 ALPHABET = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
@@ -110,6 +112,41 @@ def unlock(args):
     print(f"\n  {user.email} is active again.\n")
 
 
+def scan_manuals(args):
+    """Re-check every stored lab manual against services/pdfguard. Manuals
+    uploaded before that check existed were only checked by their header."""
+    from flask import current_app
+    folder = current_app.config["SOP_FOLDER"]
+    bad = 0
+    print(f"\n  Lab manuals in {folder}:")
+    for exp in Experiment.query.filter(Experiment.sop_pdf.isnot(None)).order_by(Experiment.id):
+        path = folder / exp.sop_pdf
+        if not path.is_file():
+            verdict = "MISSING"
+        else:
+            try:
+                check_pdf(path)
+                verdict = "ok"
+            except UnsafePDF as e:
+                verdict = f"REFUSED - {e}"
+        if verdict != "ok":
+            bad += 1
+            if args.detach:
+                exp.sop_pdf = None
+                verdict += "  (detached)"
+        print(f"    {exp.slug:<32} {exp.sop_pdf or '':<36} {verdict}")
+    if args.detach and bad:
+        SystemLog.write(f"scan-manuals detached {bad} lab manual(s) from the command line",
+                        level="warning", category="admin")
+        db.session.commit()
+    print(f"\n  {bad} manual(s) need attention." if bad else "\n  All manuals pass.")
+    if bad and not args.detach:
+        print("  Re-upload them from Admin > Experiments, or rerun with --detach "
+              "to stop serving them.")
+    print()
+    return 1 if bad and not args.detach else 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -132,10 +169,15 @@ def main():
     p.add_argument("email")
     p.set_defaults(func=unlock)
 
+    p = sub.add_parser("scan-manuals", help="Re-check every stored lab manual PDF.")
+    p.add_argument("--detach", action="store_true",
+                   help="Unlink refused or missing manuals from their experiments.")
+    p.set_defaults(func=scan_manuals)
+
     args = ap.parse_args()
     app = create_app()
     with app.app_context():
-        args.func(args)
+        sys.exit(args.func(args) or 0)
 
 
 if __name__ == "__main__":

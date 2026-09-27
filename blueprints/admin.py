@@ -4,7 +4,9 @@ Covers the tabs shown in api_workflow.docx: Dashboard, Users (with CSV/Excel
 bulk upload), Courses, Experiments, Devices (added by IP and identified by
 querying the node), Bookings (with a user-detail view), Sessions, and Logs.
 """
+import os
 import re
+import tempfile
 from datetime import timedelta
 from functools import wraps
 
@@ -19,6 +21,7 @@ from models import (Booking, Course, Experiment, LabPi, LabPiHeartbeat,
 from services.netguard import UnsafeNodeAddress, validate_address, validate_port
 import sockets
 from services import importer, mailer, nodes, serial_policy, timeutil, validators
+from services.pdfguard import UnsafePDF, check_pdf
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -47,15 +50,58 @@ def _slugify(text):
 
 # --------------------------------------------------------------------------
 
-def _looks_like_pdf(fileobj):
-    head = fileobj.read(2048)
-    fileobj.seek(0)
-    if not head.startswith(b'%PDF-'):
-        return False
+def _store_manual(storage, slug):
+    """Validate an uploaded lab manual and move it into SOP_FOLDER as
+    <slug>.pdf. Returns the stored filename; raises UnsafePDF (user-facing
+    message) and leaves any existing manual untouched if the upload is refused.
+
+    The file is written to a temporary name first and only renamed over the
+    old manual once services.pdfguard has passed it, so a refused or
+    half-written upload never replaces a good one."""
+    if not storage.filename.lower().endswith(".pdf"):
+        raise UnsafePDF("The manual must be a .pdf file.")
+    stream = storage.stream
+    stream.seek(0, os.SEEK_END)
+    size = stream.tell()
+    stream.seek(0)
+    limit = current_app.config["SOP_MAX_BYTES"]
+    if size == 0:
+        raise UnsafePDF("The manual is empty.")
+    if size > limit:
+        raise UnsafePDF(f"The manual is larger than {limit // (1024 * 1024)} MB.")
     try:
-        return magic.from_buffer(head, mime=True) == 'application/pdf'
+        if magic.from_buffer(stream.read(2048), mime=True) != "application/pdf":
+            raise UnsafePDF("The manual must be a PDF file.")
+    except UnsafePDF:
+        raise
     except Exception:
-        return head.startswith(b'%PDF-')
+        # Fail closed: an unusable libmagic is not a reason to accept a file.
+        current_app.logger.exception("libmagic failed while checking a manual")
+        raise UnsafePDF("The manual could not be checked. Try again.")
+    finally:
+        stream.seek(0)
+
+    folder = current_app.config["SOP_FOLDER"]
+    folder.mkdir(parents=True, exist_ok=True)
+    fname = secure_filename(f"{slug}.pdf")
+    fd, tmp = tempfile.mkstemp(dir=folder, prefix=".upload-", suffix=".part")
+    try:
+        with os.fdopen(fd, "wb") as out:
+            storage.save(out)
+        check_pdf(tmp)
+        os.replace(tmp, folder / fname)
+    except BaseException:
+        os.unlink(tmp)
+        raise
+    return fname
+
+
+def _log_refused_manual(slug, reason):
+    """Refusals are committed on their own: the request that caused them
+    rolls back everything else."""
+    SystemLog.write(f"Lab manual refused for {slug}: {reason}", level="warning",
+                    category="admin", user_id=current_user.id)
+    db.session.commit()
 
 
 @bp.route("/")
@@ -316,13 +362,14 @@ def experiments():
         )
         pdf = request.files.get("sop_pdf")
         if pdf and pdf.filename:
-            if not pdf.filename.lower().endswith(".pdf") or not _looks_like_pdf(pdf.stream):
-                flash("The manual must be a valid PDF.", "error")
+            try:
+                exp.sop_pdf = _store_manual(pdf, slug)
+            except UnsafePDF as e:
+                _log_refused_manual(slug, e)
+                flash(f"{e} The experiment was not added.", "error")
                 return redirect(url_for("admin.experiments"))
-            fname = secure_filename(f"{slug}.pdf")
-            current_app.config["SOP_FOLDER"].mkdir(parents=True, exist_ok=True)
-            pdf.save(current_app.config["SOP_FOLDER"] / fname)
-            exp.sop_pdf = fname
+            SystemLog.write(f"Lab manual uploaded for {slug}", category="admin",
+                            user_id=current_user.id)
 
         db.session.add(exp)
         db.session.commit()
@@ -339,6 +386,21 @@ def experiments():
 @admin_required
 def edit_experiment(experiment_id):
     exp = Experiment.query.get_or_404(experiment_id)
+
+    # The manual is checked before any field is touched, so a refused upload
+    # saves nothing - previously it was skipped silently and the page still
+    # said "Changes saved."
+    pdf = request.files.get("sop_pdf")
+    if pdf and pdf.filename:
+        try:
+            exp.sop_pdf = _store_manual(pdf, exp.slug)
+        except UnsafePDF as e:
+            _log_refused_manual(exp.slug, e)
+            flash(f"{e} Nothing was saved.", "error")
+            return redirect(url_for("admin.experiments"))
+        SystemLog.write(f"Lab manual replaced for {exp.slug}", category="admin",
+                        user_id=current_user.id)
+
     exp.name = (request.form.get("name") or exp.name).strip()
     exp.summary = request.form.get("summary")
     exp.description = request.form.get("description")
@@ -347,13 +409,6 @@ def edit_experiment(experiment_id):
     exp.max_duration_min = _safe_int(request.form.get("max_duration_min"), exp.max_duration_min)
     exp.course_id = request.form.get("course_id") or None
     exp.is_active = request.form.get("is_active") == "on"
-
-    pdf = request.files.get("sop_pdf")
-    if pdf and pdf.filename and pdf.filename.lower().endswith(".pdf") and _looks_like_pdf(pdf.stream):
-        fname = secure_filename(f"{exp.slug}.pdf")
-        current_app.config["SOP_FOLDER"].mkdir(parents=True, exist_ok=True)
-        pdf.save(current_app.config["SOP_FOLDER"] / fname)
-        exp.sop_pdf = fname
 
     db.session.commit()
     flash("Changes saved.", "success")

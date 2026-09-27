@@ -39,8 +39,7 @@ fi
 if [ "$PURGE" = false ]; then
   say "Done"
   echo "  The service is gone. Your data is still here:"
-  echo "    ${APP_DIR}/data/       database"
-  echo "    ${APP_DIR}/static/sop/ lab manuals"
+  echo "    ${APP_DIR}/data/       database and lab manuals (data/sop/)"
   echo "    ${APP_DIR}/.env        secrets"
   echo
   echo "  Reinstall over the top:  sudo ./install/install.sh"

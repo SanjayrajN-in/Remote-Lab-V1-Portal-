@@ -14,6 +14,11 @@ gunicorn==26.2.0
 # but never declared - a fresh venv built from this file would not start.
 python-magic==0.4.27
 
+# Parses uploaded lab-manual PDFs so services/pdfguard.py can refuse ones that
+# carry JavaScript, launch actions or embedded files (VAPT finding). Wraps
+# qpdf, which handles the compressed object streams pdflatex writes.
+pikepdf==10.14.0
+
 # Master-side relay to the Lab Pi's own SocketIO app (serial/chart/oscilloscope)
 Flask-SocketIO==5.6.1
 python-socketio[client]==5.17.0

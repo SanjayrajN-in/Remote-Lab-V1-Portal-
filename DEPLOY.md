@@ -50,7 +50,7 @@ passwd                          # pick something long
 >
 > cd /path/to/remote_lab_portal
 > sudo chown -R root:root .
-> sudo chown -R remotelab:remotelab data uploads static/sop
+> sudo chown -R remotelab:remotelab data uploads
 > sudo chown root:root .env && sudo chmod 600 .env   # systemd reads it as root
 >
 > sudo sed -e "s|__APP_DIR__|$PWD|g" -e "s|__USER__|remotelab|g" \
@@ -393,15 +393,42 @@ server {
 Then set `PORTAL_BASE_URL=https://vlab.example.edu` in `.env` so invitation
 links point at the right place.
 
-## Backups
+## Lab manuals moved out of static/ (upgrading from an older build)
 
-Everything that matters lives in three places:
+Older builds kept lab manuals in `static/sop/`, where anyone could download
+them without signing in. They now live in `data/sop/` and are only served
+through the signed-in, course-checked download link. Uploads are also parsed
+and refused if they contain JavaScript, launch actions, embedded files or
+encryption (ordinary pdflatex/hyperref output passes). After upgrading:
 
 ```bash
-tar czf backup-$(date +%F).tar.gz data/ static/sop/ .env
+cd ~/remote_lab_portal
+sudo -u remotelab mkdir -p data/sop
+sudo mv static/sop/*.pdf data/sop/
+sudo chown remotelab:remotelab data/sop/*.pdf
+sudo -u remotelab venv/bin/pip install -r requirements.txt   # adds pikepdf
+sudo -u remotelab venv/bin/python manage.py scan-manuals
 ```
 
-`data/portal.db` is the database, `static/sop/` holds the lab manuals, and
+`scan-manuals` re-checks every stored manual, because ones uploaded before
+this change were only checked by their first bytes. Re-upload anything it
+refuses from Admin > Experiments, or run it with `--detach` to stop serving
+those files straight away. The portal logs a warning at startup for as long as
+PDFs remain in `static/sop/`.
+
+Also update the systemd unit: `ReadWritePaths` no longer includes
+`static/sop` (re-run `install/install.sh`, or edit it and `systemctl daemon-reload`).
+
+
+## Backups
+
+Everything that matters lives in two places:
+
+```bash
+tar czf backup-$(date +%F).tar.gz data/ .env
+```
+
+`data/portal.db` is the database, `data/sop/` holds the lab manuals, and
 `.env` holds the secrets. Losing `.env` signs everyone out and breaks the node
 link, so keep a copy somewhere safe.
 
@@ -419,7 +446,7 @@ cd ~/remote_lab_portal
 sudo ./install/uninstall.sh
 ```
 
-This stops and unregisters the service and leaves `data/`, `static/sop/` and
+This stops and unregisters the service and leaves `data/` and
 `.env` untouched, so `sudo ./install/install.sh` afterwards picks up exactly
 where you were.
 
@@ -443,14 +470,14 @@ matters:
 
 ```bash
 cd ~/remote_lab_portal
-tar czf ~/remote-lab-backup-$(date +%F).tar.gz data/ static/sop/ .env
+tar czf ~/remote-lab-backup-$(date +%F).tar.gz data/ .env
 ```
 
 ### Replacing an existing install with a newer build
 
 ```bash
 cd ~/remote_lab_portal
-tar czf ~/remote-lab-backup-$(date +%F).tar.gz data/ static/sop/ .env   # safety copy
+tar czf ~/remote-lab-backup-$(date +%F).tar.gz data/ .env   # safety copy
 cd ~
 tar xzf remote_lab_portal.tar.gz          # extracts over the top
 cd remote_lab_portal

@@ -22,7 +22,11 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 
     UPLOAD_FOLDER = BASE_DIR / "uploads"
-    SOP_FOLDER = BASE_DIR / "static" / "sop"
+    # Lab manuals live outside static/: anything under static/ is served to
+    # anyone, signed in or not, which bypassed the course check on
+    # portal.experiment_manual. They are only reachable through that route.
+    SOP_FOLDER = BASE_DIR / "data" / "sop"
+    SOP_MAX_BYTES = int(os.environ.get("SOP_MAX_MB", "10")) * 1024 * 1024
     MAX_CONTENT_LENGTH = 32 * 1024 * 1024
 
     # Public URL of this master server, used in invitation emails.

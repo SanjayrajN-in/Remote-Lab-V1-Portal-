@@ -180,7 +180,7 @@ class Experiment(db.Model):
     objectives = db.Column(db.Text)       # newline-separated, rendered as a list
     apparatus = db.Column(db.Text)
     max_duration_min = db.Column(db.Integer, default=60, nullable=False)
-    sop_pdf = db.Column(db.String(300))   # filename under static/sop/
+    sop_pdf = db.Column(db.String(300))   # filename under SOP_FOLDER (data/sop/)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey("courses.id"))
     created_at = db.Column(db.DateTime, default=utcnow)

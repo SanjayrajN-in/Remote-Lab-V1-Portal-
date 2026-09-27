@@ -123,11 +123,15 @@ def experiment_manual(experiment_id):
     exp = _visible_or_404(experiment_id)
     if not exp.sop_pdf:
         abort(404)
-    return send_from_directory(
+    resp = send_from_directory(
         current_app.config["SOP_FOLDER"], exp.sop_pdf,
+        mimetype="application/pdf",
         as_attachment=True,
         download_name=f"{exp.slug}-manual.pdf",
     )
+    # If a browser renders it inline anyway, it gets no script and no origin.
+    resp.headers["Content-Security-Policy"] = "sandbox"
+    return resp
 
 
 # --------------------------------------------------------------------------
